@@ -12,6 +12,8 @@
 	image = url to image (best to use whitelisted url)
 	class_whitelist = all classes that will be attempted to wrapped
 	model_filter = only attempts to wrap props of which their models match any of the filters
+	
+	to wrap the image type '.do' in chat
 ]]
 
 local size = Vector(143, 318) / 143 * 30
@@ -141,15 +143,15 @@ if SERVER then
 	
 else
 	
-	-- Check if we have all permissions, if not dont do manything
-    for _, perm in pairs({
-        "material.create",
-        "material.urlcreate",
-        "mesh"
-    }) do
-        --assert(hasPermission(perm), perm .. " is not enabled")
-        if not hasPermission(perm) then return end
-    end
+	-- Check if we have all permissions, if not dont do anything
+	for _, perm in pairs({
+		"material.create",
+		"material.urlcreate",
+		"mesh"
+	}) do
+		--assert(hasPermission(perm), perm .. " is not enabled")
+		if not hasPermission(perm) then return end
+	end
 	
 	local mat = material.create("VertexLitGeneric")
 	mat:setTextureURL("$basetexture", image, function(_, _, w, h, layout)
@@ -245,8 +247,8 @@ else
 		local polyclip = require("../lib/polyclip.lua")
 		
 		local function linePlane(pos, plane_pos, plane_normal)
-		    local x = plane_normal:dot(plane_pos - pos) / plane_normal:dot(Vector(0, 0, 9999))
-		    return pos + Vector(0, 0, x * 9999)
+			local x = plane_normal:dot(plane_pos - pos) / plane_normal:dot(Vector(0, 0, 9999))
+			return pos + Vector(0, 0, x * 9999)
 		end
 		
 		net.receive("map", function()
