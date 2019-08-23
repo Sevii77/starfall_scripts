@@ -1,14 +1,9 @@
 --@name Chassis Creator
---@author Sevii (https://steamcommunity.com/id/dadamrival/)
+--@author Sevii
 --@server
 
---[[
-	To save contraptions with this be sure to first remove the collider and steering balls,
-	if there are also door colliders remove those first
-]]
-
 -- Enable to only make the collider and nothing else, this allows for easy adjustment making to the collider
-local build_mode = true
+local build_mode = false
 
 -- Settings of the steering, a table containing multiple steering ball data
 local steering_ball = {{
@@ -30,12 +25,16 @@ local wheel_steering = {
 
 local spring_width = 0 -- Width of the suspension constraints
 local spring_max = 20 -- Can be table to set each wheels value seperatly, Low values can lead to spring getting stuck
-local spring_constant = 20000 -- Can be table to set each wheels value seperatly
+local spring_constant = 30000 -- Can be table to set each wheels value seperatly
 local spring_damping = 1100 -- Can be table to set each wheels value seperatly
 local spring_length = 0 -- Can be table to set each wheels value seperatly, Extra length added, Can be changed dynamicly via inputs with the name SpringLengths
 
--- Weight of the collider / base prop
-local collider_weight = 150
+-- Now uses base entity weight --- Weight of the collider / base prop
+-- local collider_weight = 150
+-- Should drag be enabled
+local collider_drag = false
+-- The physical material of the collider
+local collider_phys_material = "metal"
 -- Table containing tables containing vertices, a collider can have multiple parts but each part must be convex
 local collider_vertices = {
 	{ -- Base
@@ -198,7 +197,10 @@ local e = Vector()
 -- Collider
 
 local collider = prop.createCustom(base:getPos(), base:getAngles(), collider_vertices, true)
-collider:setMass(collider_weight)
+--collider:setMass(collider_weight)
+collider:setMass(base:getMass())
+collider:enableDrag(collider_drag)
+collider:setPhysMaterial(collider_phys_material)
 
 wire.ports.Collider = collider
 

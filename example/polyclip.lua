@@ -1,10 +1,10 @@
 --@client
---@include lib/polyclip.lua
+--@include ../lib/polyclip.lua
 
 local poly = {Vector(50, 50), Vector(500, 300), Vector(200, 350)}
 local clip = {Vector(156, 156), Vector(356, 156), Vector(356, 356), Vector(156, 356)}
 
-local polyclip = require("lib/polyclip.lua")
+local polyclip = require("../lib/polyclip.lua")
 local vertices = polyclip.clip(poly, clip)
 
 hook.add("render", "", function()

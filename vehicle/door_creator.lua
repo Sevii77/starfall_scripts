@@ -16,8 +16,12 @@ local hinge_health = 50
 local hinge_min = Vector(-0.01, -0.01, -0.01)
 local hinge_max = Vector( 70,   0.01,  0.01)
 
--- Weight of the collider
-local collider_weight = 30
+-- Now uses hinge entity weight -- -Weight of the collider
+--local collider_weight = 30
+-- Should drag be enabled
+local collider_drag = false
+-- The physical material of the collider
+local collider_phys_material = "metal"
 -- Table containing tables containing vertices, a collider can have multiple parts but each part must be convex
 local collider_vertices = {
 	{
@@ -47,7 +51,9 @@ function create()
 		local hinge = wire.ports.Hinge
 		
 		local collider = prop.createCustom(hinge:getPos(), hinge:getAngles(), collider_vertices, true)
-		collider:setMass(collider_weight)
+		--collider:setMass(collider_weight)
+		collider:setMass(hinge:getMass())
+		collider:setPhysMaterial(collider_phys_material)
 		
 		local hinge_pos = base:worldToLocal(hinge:getPos())
 		local hinge_ang = base:worldToLocalAngles(hinge:getAngles())
