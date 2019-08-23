@@ -1,4 +1,4 @@
---@name Image Wrapper
+--@name Image Wrapper Multi
 --@author Sevii (https://steamcommunity.com/id/dadamrival/)
 --@include ../lib/mesh.lua
 --@include ../lib/polyclip.lua
@@ -308,28 +308,17 @@ else
 	if not hasPermission("mesh") then return end
 	
 	-- Check if we got permissions to create a material, if not skip it
-	local create_mat = true
 	local mats = {}
-	
-	for _, perm in pairs({
-		"material.create",
-		"material.urlcreate"
-	}) do
-		if not hasPermission(perm) then
-			create_mat = false
-			
-			break
-		end
-	end
-	
-	if create_mat then
+	if hasPermission("material.create") then
 		for i, data in pairs(decals) do
-			mats[i] = material.create("VertexLitGeneric")
-			mats[i]:setInt("$flags", 0x0100 + 0x2000)
-			mats[i]:setFloat("$alphatestreference", 0.1)
-			mats[i]:setTextureURL("$basetexture", data.image, function(_, _, w, h, layout)
-				layout(0, 0, 1024, 1024)
-			end)
+			if hasPermission("material.urlcreate", data.image) then
+				mats[i] = material.create("VertexLitGeneric")
+				mats[i]:setInt("$flags", 0x0100 + 0x2000)
+				mats[i]:setFloat("$alphatestreference", 0.1)
+				mats[i]:setTextureURL("$basetexture", data.image, function(_, _, w, h, layout)
+					layout(0, 0, 1024, 1024)
+				end)
+			end
 		end
 	end
 	

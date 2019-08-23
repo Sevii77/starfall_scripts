@@ -164,21 +164,8 @@ else
 	if not hasPermission("mesh") then return end
 	
 	-- Check if we got permissions to create a material, if not skip it
-	local create_mat = true
 	local mat
-	
-	for _, perm in pairs({
-		"material.create",
-		"material.urlcreate"
-	}) do
-		if not hasPermission(perm) then
-			create_mat = false
-			
-			break
-		end
-	end
-	
-	if create_mat then
+	if hasPermission("material.create") and hasPermission("material.urlcreate", image) then
 		mat = material.create("VertexLitGeneric")
 		mat:setInt("$flags", 0x0100 + 0x2000)
 		mat:setFloat("$alphatestreference", 0.1)
