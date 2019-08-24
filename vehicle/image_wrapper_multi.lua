@@ -11,20 +11,36 @@
 	decals, table containing all decals
 		size = Vector(x, y)
 		image = url to image (best to use whitelisted url)
+		find_size_override = override for the search sphere size, if nil it will use size
+		full_bright = same as the other one but overrides it
+		min_face_ang = same as the other one but overrides it
+		model_filter = same as the other one but overrides it
+		class_whitelist = same as the other one but overrides it
 	
+	full_bright = should this texture use UnlitGeneric or VertexLitGeneric
 	min_face_ang = what the normal.z should be larger than (0 - 1), altho -1 also would work it would put the faces inside the prop
 	class_whitelist = all classes that will be attempted to wrapped
 	model_filter = only attempts to wrap props of which their models match any of the filters
 	
 	to wrap the image type '.do' in chat while looking at the projection prop
 	to save the positions of the decal projectors type '.save' in chat while looking at the chip
-		when the chip is reloaded or dupe finished it will load the decals
+		when the chip is reloaded or dupe finished it will load the decals.
+		Be sure to remove the projection props before duping because after pasting the dupe will spawn the props and sf also will. 
 ]]
 
 local decals = {
 	{
 		size = Vector(318, 143) / 143 * 30,
-		image = "https://i.imgur.com/f5FIyJM.jpg"
+		image = "https://i.imgur.com/f5FIyJM.jpg",
+		find_size_override = 50,
+		full_bright = true,
+		min_face_ang = 0.1,
+		model_filter = {
+			"(.+)"
+		},
+		class_whitelist = {
+			"prop_(.+)"
+		}
 	},
 	
 	{
@@ -33,16 +49,17 @@ local decals = {
 	}
 }
 
-local min_face_ang = 0.3
-local class_whitelist = {
-	["prop_physics"] = true
-}
+local full_bright = false
+local min_face_ang = 0.5
 local model_filter = {
-	["models/sprops/rectangles(.+)"] = true,
-	["models/sprops/cuboids/(.+)"] = true,
-	["models/sprops/geometry/(.+)"] = true,
-	["models/sprops/misc/(.+)"] = true,
-	["models/sprops/cylinders/(.+)"] = true
+	"models/sprops/rectangles(.+)",
+	"models/sprops/cuboids/(.+)",
+	"models/sprops/geometry/(.+)",
+	"models/sprops/misc/(.+)",
+	"models/sprops/cylinders/(.+)"
+}
+local class_whitelist = {
+	"prop_physics"
 }
 
 ----------------------------------------
@@ -65,12 +82,24 @@ if SERVER then
 	
 	local function writeEntities(projector_ent)
 		local decals_data = decals[projectors_ents[projector_ent]]
-		local ents = find.inSphere(projector_ent:getPos(), math.max(decals_data.size.x, decals_data.size.y), function(ent)
+		local ents = find.inSphere(projector_ent:getPos(), decals_data.find_size_override or math.max(decals_data.size.x, decals_data.size.y, 30), function(ent)
 			if projectors_ents[ent] then return false end
-			if not class_whitelist[ent:getClass()] then return false end
+			--if not class_whitelist[ent:getClass()] then return false end
+			local class, valid = ent:getClass(), false
+			for _, filter in pairs(decals_data.class_whitelist or class_whitelist) do
+				if string.match(class, filter) then
+					valid = true
+					
+					break
+				end
+			end
+			
+			if not valid then return false end
 			
 			local model = ent:getModel()
-			for filter, _ in pairs(model_filter) do
+			if not model then return false end
+			
+			for _, filter in pairs(decals_data.model_filter or model_filter) do
 				if string.match(model, filter) then
 					return true
 				end
@@ -120,8 +149,9 @@ if SERVER then
 			end
 			
 			local ent = prop.create(pos, ang, "models/sprops/misc/cones/size_0/cone_6x12.mdl", true)
+			ent:setColor(Color(0, 255, 0, 50))
 			
-			local holo_radius = holograms.create(ent:getPos(), ent:getAngles(), "models/sprops/geometry/sphere_144.mdl", Vector(math.max(decal.size.x, decal.size.y) / 72))
+			local holo_radius = holograms.create(ent:getPos(), ent:getAngles(), "models/sprops/geometry/sphere_144.mdl", Vector((decal.find_size_override or math.max(decal.size.x, decal.size.y, 30)) / 72))
 			holo_radius:setColor(Color(255, 0, 0, 50))
 			holo_radius:setParent(ent)
 			
@@ -312,7 +342,7 @@ else
 	if hasPermission("material.create") then
 		for i, data in pairs(decals) do
 			if hasPermission("material.urlcreate", data.image) then
-				mats[i] = material.create("VertexLitGeneric")
+				mats[i] = material.create((data.full_bright or full_bright) and "UnlitGeneric" or "VertexLitGeneric")
 				mats[i]:setInt("$flags", 0x0100 + 0x2000)
 				mats[i]:setFloat("$alphatestreference", 0.1)
 				mats[i]:setTextureURL("$basetexture", data.image, function(_, _, w, h, layout)
@@ -349,13 +379,29 @@ else
 		local vertices = {}
 		local p = data.parent
 		
-		local ang_chip = projector_ent:getAngles()
-		local ang_parent = p:getAngles()
+		local min, max = Vector(math.huge), Vector(-math.huge)
 		for i, vertex in pairs(data.vertices) do
-			local uv = vertex.pos / decals[projector_id].size + Vector(0.5, 0.5)
+			local pos = p:worldToLocal(projector_ent:localToWorld(vertex.pos - Vector(0, 0, 0.5)))
+			local uv = vertex.pos / decals[projector_id].size + Vector(0.5, 0.5) -- + vertex.normal)
+			
+			if pos.x < min.x then
+				min.x = pos.x
+			end if pos.y < min.y then
+				min.y = pos.y
+			end if pos.z < min.z then
+				min.z = pos.z
+			end
+			
+			if pos.x > max.x then
+				max.x = pos.x
+			end if pos.y > max.y then
+				max.y = pos.y
+			end if pos.z > max.z then
+				max.z = pos.z
+			end
 			
 			table.insert(vertices, {
-				pos = p:worldToLocal(projector_ent:localToWorld(vertex.pos - Vector(0, 0, 0.5))), -- + vertex.normal)
+				pos = pos,
 				normal = vertex.normal,
 				u = uv.x,
 				v = uv.y
@@ -365,6 +411,7 @@ else
 		local mesh = mesh.createFromTable(vertices)
 		p:setMesh(mesh)
 		p:setMeshMaterial(mats[projector_id])
+		p:setRenderBounds(min, max)
 		
 		return mesh
 	end

@@ -184,7 +184,7 @@ local collider_vertices = {
 
 ----------------------------------------
 
-wire.adjustInputs({"Base", "Wheels", "SpringLengths", "A", "D"}, {"ENTITY", "ARRAY", "ARRAY", "NUMBER", "NUMBER"})
+wire.adjustInputs({"Base", "Wheels", "SpringLengths", "A", "D", "SteerspeedMul"}, {"ENTITY", "ARRAY", "ARRAY", "NUMBER", "NUMBER", "NUMBER"})
 wire.adjustOutputs({"Collider"}, {"ENTITY"})
 
 local base = wire.ports.Base
@@ -261,6 +261,10 @@ hook.add("think", "steering", function()
 			end
 			
 			i = i + 1
+		end
+		
+		if wire.ports.SteerspeedMul > 0 then
+			steering_speed = steering_speed * wire.ports.SteerspeedMul
 		end
 		
 		local dist = target_ang * steer_mul - data.ang
