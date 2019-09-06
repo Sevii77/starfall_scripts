@@ -16,6 +16,7 @@
 		min_face_ang = same as the other one but overrides it
 		model_filter = same as the other one but overrides it
 		class_whitelist = same as the other one but overrides it
+		animation = animation data
 	
 	full_bright = should this texture use UnlitGeneric or VertexLitGeneric
 	min_face_ang = what the normal.z should be larger than (0 - 1), altho -1 also would work it would put the faces inside the prop
@@ -46,6 +47,21 @@ local decals = {
 	{
 		size = Vector(40, 40),
 		image = "https://i.imgur.com/uY7bH0m.png"
+	},
+	
+	{
+		size = Vector(204, 144) / 144 * 40,
+		image = "https://i.imgur.com/eGgl1rU.png",
+		full_bright = true,
+		min_face_ang = 0.1,
+		animation = {
+			speed = 1,
+			xcount = 5,
+			ycount = 7,
+			width = 204,
+			height = 144,
+			timing = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}
+		}
 	}
 }
 
@@ -334,6 +350,8 @@ if SERVER then
 	
 else
 	
+	local animations = {}
+	
 	-- Check if we can create the mesh, if not dont run the rest of the code
 	if not hasPermission("mesh") then return end
 	
@@ -342,14 +360,65 @@ else
 	if hasPermission("material.create") then
 		for i, data in pairs(decals) do
 			if hasPermission("material.urlcreate", data.image) then
-				mats[i] = material.create((data.full_bright or full_bright) and "UnlitGeneric" or "VertexLitGeneric")
-				mats[i]:setInt("$flags", 0x0100 + 0x2000)
-				mats[i]:setFloat("$alphatestreference", 0.1)
-				mats[i]:setTextureURL("$basetexture", data.image, function(_, _, w, h, layout)
-					layout(0, 0, 1024, 1024)
-				end)
+				if data.animation then
+					local rt = tostring(i)
+					
+					render.createRenderTarget(rt)
+					
+					mats[i] = material.create((data.full_bright or full_bright) and "UnlitGeneric" or "VertexLitGeneric")
+					mats[i]:setInt("$flags", 0x0100 + 0x2000)
+					mats[i]:setFloat("$alphatestreference", 0.1)
+					mats[i]:setTextureRenderTarget("$basetexture", rt)
+					
+					table.insert(animations, {
+						rt = rt,
+						--mat = mats[i],
+						width = data.animation.width,
+						height = data.animation.height,
+						xcount = data.animation.xcount,
+						ycount = data.animation.ycount,
+						timing = data.animation.timing,
+						speed = data.animation.speed or 1,
+						next = 0,
+						frame = 0,
+						count = #data.animation.timing,
+						sheet = render.getTextureID(data.image)
+					})
+				else
+					mats[i] = material.create((data.full_bright or full_bright) and "UnlitGeneric" or "VertexLitGeneric")
+					mats[i]:setInt("$flags", 0x0100 + 0x2000)
+					mats[i]:setFloat("$alphatestreference", 0.1)
+					mats[i]:setTextureURL("$basetexture", data.image, function(_, _, w, h, layout)
+						layout(0, 0, 1024, 1024)
+					end)
+				end
 			end
 		end
+	end
+	
+	----------------------------------------
+	-- Animation
+	
+	if #animations > 0 and hasPermission("render.offscreen") then
+		hook.add("renderoffscreen", "animations", function()
+			local t = timer.curtime()
+			
+			for _, data in pairs(animations) do
+				if t > data.next then
+					data.frame = data.frame % data.count + 1
+					
+					render.selectRenderTarget(data.rt)
+					render.clear(Color(0, 0, 0, 0))
+					render.setTexture(data.sheet)
+					
+					local u = ((data.frame - 1) % data.xcount) * data.width / 1024
+					local v = math.floor((data.frame - 1) / data.xcount) * data.height / 1024
+					render.drawTexturedRectUV(0, 0, 1024, 1024, u, v, u + (data.width / 1024), v + (data.height / 1024))
+					
+					data.next = t + data.timing[data.frame] / data.speed
+				end
+			end
+		end)
 	end
 	
 	----------------------------------------
