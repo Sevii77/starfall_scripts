@@ -56,7 +56,8 @@ else
 	end
 	
 	local mesh = mesh.createFromTable(vertices)
-	local mat = render.getTextureID("models/debug/debugwhite")
+	local mat = material.create("UnlitGeneric")
+	mat:setInt("$flags", 0x0010)
 	
 	net.start("")
 	net.send()

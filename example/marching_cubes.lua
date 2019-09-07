@@ -6,9 +6,11 @@ local res = 16
 local scale = res / 128
 local iso = 0
 
+local holo_scale = 20
+
 if SERVER then
 	
-	local holo = holograms.create(chip():getPos() + Vector(0, 0, 100), Angle(), "models/props_junk/PopCan01a.mdl", Vector(8, 8, 8))
+	local holo = holograms.create(chip():getPos(), Angle(), "models/props_junk/PopCan01a.mdl", Vector(holo_scale))
 	
 	net.receive("", function(_, ply)
 		net.start("")
@@ -81,6 +83,7 @@ else
 	
 	local mesh = mesh.createFromTable(vertices)
 	local mat = material.create("UnlitGeneric")
+	mat:setInt("$flags", 0x0010)
 	
 	net.start("")
 	net.send()
@@ -89,7 +92,7 @@ else
 		local holo = entity(net.readUInt(13)):toHologram()
 		holo:setMesh(mesh)
 		holo:setMeshMaterial(mat)
-		holo:setRenderBounds(Vector(), Vector(res * 8))
+		holo:setRenderBounds(Vector(), Vector(res * holo_scale))
 	end)
 	
 end
