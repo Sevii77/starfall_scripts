@@ -64,8 +64,11 @@ else
 	
 	net.receive("", function()
 		local holo = entity(net.readUInt(13)):toHologram()
-		holo:setMesh(mesh)
-		holo:setMeshMaterial(mat)
+		
+		timer.simple(1, function()
+			holo:setMesh(mesh)
+			holo:setMeshMaterial(mat)
+		end)
 	end)
 	
 end

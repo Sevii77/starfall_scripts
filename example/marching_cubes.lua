@@ -90,9 +90,12 @@ else
 	
 	net.receive("", function()
 		local holo = entity(net.readUInt(13)):toHologram()
-		holo:setMesh(mesh)
-		holo:setMeshMaterial(mat)
-		holo:setRenderBounds(Vector(), Vector(res * holo_scale))
+		
+		timer.simple(1, function()
+			holo:setMesh(mesh)
+			holo:setMeshMaterial(mat)
+			holo:setRenderBounds(Vector(), Vector(res * holo_scale))
+		end)
 	end)
 	
 end

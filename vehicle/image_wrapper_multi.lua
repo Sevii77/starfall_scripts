@@ -543,7 +543,10 @@ else
 						if p:isValid() then
 							data.parent = p:toHologram()
 							data.loaded = true
-							data.mesh = doVerticies(data, projector_id, main_data.projector_ent)
+							
+							timer.simple(1, function()
+								data.mesh = doVerticies(data, projector_id, main_data.projector_ent)
+							end)
 						end
 					end
 				end
