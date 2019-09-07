@@ -37,6 +37,6 @@ end)
 hook.add("render", "draw", function()
 	render.selectRenderTarget("")
 	if coroutine.resume(draw) then
-        hook.remove("render", "draw")
-    end
+		hook.remove("render", "draw")
+	end
 end)

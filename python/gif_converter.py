@@ -1,4 +1,4 @@
-from PIL import Image, ImageSequence
+from PIL import Image
 import math
 
 sheet = Image.new("RGBA", (1024, 1024))
