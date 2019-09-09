@@ -1,3 +1,4 @@
+--@name Polyclip Example
 --@client
 --@include ../lib/polyclip.lua
 
