@@ -1,7 +1,7 @@
 --@name 3D Screen Example
---@include ./lib/3dscreen.lua
+--@include ../lib/object/3dscreen.lua
 
-Screen = require("./lib/3dscreen.lua")
+Screen = require("../lib/object/3dscreen.lua")
 
 screen_main = Screen(chip():getPos() + Vector(0, 0, 50), Angle(0, 0, 45), Vector(40, 40))
 screen_mirror = Screen(chip():getPos() + Vector(50, 0, 50), Angle(0, 0, 45), Vector(40, 40))
@@ -26,6 +26,7 @@ screen_secondairy = Screen(chip():getPos() + Vector(-80, 0, 50), Angle(0, 0, 45)
 		SCREEN:mirror( screen[screen] or nil ) (will display the same as given screen or stops mirroring if nil is given)
 		SCREEN:setEnabled( state[boolean] ) (will enable or disable the rendering of the screen)
 		SCREEN:setClear( state[boolean] ) (should the screens rendertarget be cleared every drawcall)
+		SCREEN:setClearColor( color[color] ) (sets the clear color, can be transparent) (same as render.setBackgroundColor)
 		SCREEN:setRender( render[function] ) (a function which will be called to draw the screen)
 ]]
 

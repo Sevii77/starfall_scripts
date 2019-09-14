@@ -12,22 +12,45 @@ local assert = assert
 local rawset = rawset
 local setmetatable = setmetatable
 
+local classes = {}
+
 return {
-    function(class_type, data)
+    function(class_type, inherit, data)
+        if not data then
+            data = inherit
+            inherit = nil
+        end
+        
         if not data then
             data = class_type
             class_type = nil
         end
+            
         
-        class_type = class_type or data.type
+        local class_type = class_type or data.type
+        local inherit = inherit or data.inherit
         
         --assert(data.constructor, "Class doesnt have a constructor")
-        assert(data.data, "Class doesnt have any data")
-        assert(class_type, "Class doesnt have a type")
+        if not data then error("Class doesnt have any data", 2) end
+        if not class_type then error("Class doesnt have a type", 2) end
+        if classes[class_type] then error("Class " .. class_type .. " already exists", 2) end
         
         ------------------------------
         
-        local object = data.data
+        if inherit then
+            local typ = type(inherit)
+            local inherit = classes[typ == "string" and inherit or typ]
+            
+            if not inherit then error("Inherit is a invalid class", 2) end
+            
+            --[[
+                TODO: inherit stuff here
+            ]]
+        end
+        
+        ------------------------------
+        
+        local object = data.data or {}
         
         if data.properties then
             local properties = data.properties
@@ -115,6 +138,8 @@ return {
                 rawset(self, key, value)
             end
         end
+        
+        classes[class_type] = data
         
         return setmetatable({}, class)
     end,

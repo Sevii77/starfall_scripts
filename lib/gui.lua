@@ -29,6 +29,7 @@ local gui = {
 	rightClickButtons = {[108] = true}, --Rightclick by default
 	doubleClickTime = 0.5,
 	visabilityUpdate = 0.1,
+	nextVisabilityUpdate = 0,
 	useServerPlayerSay = true
 }
 
@@ -207,7 +208,7 @@ hook.add("playerChat", "lib_gui", function(ply, text)
 	gui.callFunc("onChat", text)
 end)
 
-timer.create("lib_gui", gui.visabilityUpdate, 0, function()
+--[[timer.create("lib_gui", gui.visabilityUpdate, 0, function()
 	local x, y = render.getResolution()
 	
 	if not x then return end
@@ -217,7 +218,7 @@ timer.create("lib_gui", gui.visabilityUpdate, 0, function()
 		
 		v.obj.panel.onScreen = pos.y < y and pos.y + v.obj.panel.size.y > 0 and pos.x < x and pos.x + v.obj.panel.size.x > 0
 	end
-end)
+end)]]
 
 if net.dataReceive then --DEOM2
 	net.dataReceive("lib_gui", function(text)
@@ -506,6 +507,21 @@ function gui.think(x, y)
 end
 
 function gui.render()
+	gui.nextVisabilityUpdate = gui.nextVisabilityUpdate - timer.frametime()
+	if gui.nextVisabilityUpdate <= 0 then
+		gui.nextVisabilityUpdate = gui.visabilityUpdate
+		
+		local x, y = render.getResolution()
+		
+		if not x then return end
+		
+		for k, v in pairs(gui.getCorrectOrder()) do
+			local pos = gui.getGlobalPos(v.obj.panel)
+			
+			v.obj.panel.onScreen = pos.y < y and pos.y + v.obj.panel.size.y > 0 and pos.x < x and pos.x + v.obj.panel.size.x > 0
+		end
+	end
+	
 	local function renderObject(obj, offset)
 		if not obj.panel.enabled or not obj.panel.onScreen then return end
 		

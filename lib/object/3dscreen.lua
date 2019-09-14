@@ -1,6 +1,6 @@
---@include ./class.lua
+--@include ../class.lua
 
-local class, checktype = unpack(require("./class.lua"))
+local class, checktype = unpack(require("../class.lua"))
 local net = net
 
 if SERVER then
@@ -148,6 +148,7 @@ else
 		getResolution = render.getResolution,
 		getScreenEntity = render.getScreenEntity,
 		getScreenInfo = render.getScreenInfo,
+		setBackgroundColor = rendersetBackgroundColor,
 		cursorPos = render.cursorPos
 	}
 	
@@ -181,6 +182,24 @@ else
 			return render_original.getScreenInfo(ent)
 		end,
 		
+		setBackgroundColor = function(self, color, screen)
+			local screen = screen or self
+			
+			if screen == self then
+				self.bg_color = color
+			else
+				for index, scr in pairs(screens) do
+					if scr == screen then
+						screen.bg_color = color
+						
+						return
+					end
+				end
+				
+				render_original.setBackgroundColor(color, screen)
+			end
+		end,
+		
 		cursorPos = function(self, ply, screen)
 			local ply = ply or player()
 			
@@ -194,8 +213,7 @@ else
 				
 				if not pos then return end
 				
-				pos = pos - p
-				pos:rotate(-self.holo:getAngles())
+				pos = self.holo:worldToLocal(pos)
 				
 				return pos.x / self.size.x * self.width + self.width / 2, -pos.y / self.size.y * self.height + self.height / 2
 			end
@@ -211,8 +229,7 @@ else
 					
 					if not pos then return end
 					
-					pos = pos - p
-					pos:rotate(-screen.holo:getAngles())
+					pos = screen.holo:worldToLocal(pos)
 					
 					return pos.x / screen.size.x * screen.width + screen.width / 2, -pos.y / screen.size.y * screen.height + screen.height / 2
 				end
@@ -269,6 +286,7 @@ else
 			self.width = 512 * math.max(size.x / size.y, 1)
 			self.height = 512 * math.max(size.y / size.x, 1)
 			self.size = size
+			self.bg_color = Color(0, 0, 0)
 			
 			local u = self.width / 1024
 			local v = self.height / 1024
@@ -279,7 +297,7 @@ else
 			self.mesh = mesh.createFromTable({p2, p1, p4, p3, p2, p4})
 			
 			self.material = material.create("UnlitGeneric")
-			self.material:setInt("$flags", 0x0010)
+			self.material:setInt("$flags", 0x0100 + 0x0010)
 			self.material:setTextureRenderTarget("$basetexture", self.id)
 			
 			screens[cur_index] = self
@@ -291,7 +309,7 @@ else
 				render.selectRenderTarget(self.id)
 				
 				if self.clear then
-					render.clear(Color(0, 0, 0, 0))
+					render.clear(self.bg_color)
 				end
 				
 				-- Override screen related functions
@@ -325,6 +343,7 @@ else
 			mirrored = false,
 			enabled = true,
 			clear = true,
+			bg_color = 0,
 			render = function() end,
 			
 			------------------------------
@@ -354,7 +373,7 @@ else
 					
 					if not self.material then
 						self.material = material.create("UnlitGeneric")
-						self.material:setInt("$flags", 0x0010)
+						self.material:setInt("$flags", 0x0100 + 0x0010)
 						self.material:setTextureRenderTarget("$basetexture", self.id)
 					end
 					
@@ -370,6 +389,10 @@ else
 			
 			setClear = function(self, state)
 				self.clear = state and true or false
+			end,
+			
+			setClearColor = function(self, color)
+				self.bg_color = color
 			end,
 			
 			setRender = function(self, func)
