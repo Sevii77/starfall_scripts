@@ -4,13 +4,22 @@
 
 local settings = {
     chunk_size = 8,
-    crop_size = 64,
-    crop_texture = "https://i.imgur.com/gNJvemt.png", --"https://i.imgur.com/ZUTIRvY.png",
-    crop_detail = 1,
-    crop_resolution = 16, -- 128
+    crop_size = 48,
+    step_size = 6,
+    
+    crop_texture = "https://i.imgur.com/gNJvemt.png",
+    crop_detail = 2,
+    crop_resolution = 16,
     crop_pixelated = true,
-    crop_height = 1,
-    landsize = Vector(8, 6)
+    crop_height = 2,
+    
+    --[[crop_texture = "https://i.imgur.com/ZUTIRvY.png",
+    crop_detail = 2,
+    crop_resolution = 32,
+    crop_pixelated = true,
+    crop_height = 2,]]
+    
+    landsize = Vector(4, 4)
 }
 
 ----------------------------------------
@@ -82,19 +91,23 @@ if SERVER then
     ----------------------------------------
     
     local harvesters = {}
+    local score = {}
     hook.add("playerSay", "", function(ply, text)
         if ply ~= owner() then return end
-        if text ~= ".do" then return end
         
-        local target = owner():getEyeTrace().Entity
-        
-        if target == entity(0) then return end
-        
-        harvesters[target] = true
+        if text == ".do" then
+            local target = owner():getEyeTrace().Entity
+            
+            if target == entity(0) then return end
+            
+            harvesters[target] = true
+        elseif text == ".score" then
+            printTable(score)
+        end
     end)
     
     timer.create("", 0.1, 0, function()
-        local steps = 5
+        local steps = settings.step_size
         local cp = chip():getPos()
         local height = cp.z
         
@@ -111,21 +124,29 @@ if SERVER then
             for x = min.x, max.x, size.x / steps do
                 for y = min.y, max.y, size.y / steps do
                     for z = min.z, max.z, size.z / steps do
+                        if (x ~= min.x and x ~= max.x) and (y ~= min.y and y ~= max.y) and (z ~= min.z and z ~= max.z) then continue end
+                        
                         local lpos = Vector(x, y, z)
                         local pos = harvester:localToWorld(lpos)
                         
-                        if pos.z > height + 16 or pos.z < height - 16 then continue end
+                        if pos.z > height + 32 or pos.z < height - 32 then continue end
                         
                         local cropx = math.floor((pos.x - cp.x) / crs)
                         local cropy = math.floor((pos.y - cp.y) / crs)
                         
-                        if cropx < 0 or cropx >= crs * cs or cropy < 0 or cropy >= crs* cs then continue end
+                        if cropx < 0 or cropx >= settings.landsize.x * cs or cropy < 0 or cropy >= settings.landsize.y * cs then continue end
                         
-                        crops_changed[cropx .. "," .. cropy] = {
-                            x = cropx,
-                            y = cropy,
-                            state = false
-                        }
+                        if crops[cropx][cropy] then
+                            crops[cropx][cropy] = false
+                            crops_changed[cropx .. "," .. cropy] = {
+                                x = cropx,
+                                y = cropy,
+                                state = false
+                            }
+                            
+                            local owner = harvester:getOwner()
+                            score[owner] = (score[owner] or 0) + 1
+                        end
                     end
                 end
             end
@@ -144,25 +165,36 @@ else
     local chunks = {}
     local chunks_changed = {}
     
-    local mat = material.create("UnlitGeneric")
-    --mat:setInt("$flags", 0x2000)
+    local mat = material.create("VertexLitGeneric")
     mat:setInt("$flags", 0x0100 + 0x2000)
     mat:setFloat("$alphatestreference", 0.1)
+    mat:setInt("$treeSway", 2)
+    mat:setInt("$treeSwayStatic", 1)
+    mat:setFloat("$treeSwayRadius", 999999)
+    mat:setFloat("$treeSwayScrumbleStrength", 0.3)
+    mat:setFloat("$treeSwayScrumbleFrequency", 30)
+    mat:setFloat("$treeSwayScrumbleFalloffExp", 1)
     mat:setTextureURL("$basetexture", settings.crop_texture, function(_, _, w, h, layout)
-        layout(0, 0, settings.crop_resolution, settings.crop_resolution)
+        if layout then
+            layout(0, 0, settings.crop_resolution, settings.crop_resolution)
+        end
     end)
     
     net.request("farmland", function()
         for x = 0, settings.landsize.x - 1 do
             for y = 0, settings.landsize.y - 1 do
-                chunks[x .. "," .. y] = {
-                    x = x,
-                    y = y,
-                    holo = net.readUInt(13),
-                    loaded = false,
-                    mesh = nil,
-                    cache = {}
-                }
+                local holo = net.readUInt(13)
+                
+                timer.simple(1, function()
+                    chunks[x .. "," .. y] = {
+                        x = x,
+                        y = y,
+                        holo = holo,
+                        loaded = false,
+                        mesh = nil,
+                        cache = {}
+                    }
+                end)
             end
         end
         
@@ -193,6 +225,7 @@ else
     
     local detail = settings.crop_detail
     local uv = settings.crop_resolution / 1024
+    local normal = Vector(1, 1, 1)
     function createCrop(xo, yo, height)
         local vertices = {}
         
@@ -209,10 +242,10 @@ else
             local y2 = -y * 0.9 + 0.5
             local mul = 0.5 + math.random() * 0.5
             
-            local a = {pos = Vector(x1 * mul + xo, y1 * mul + yo, height), u = 0 , v = 0}
-            local b = {pos = Vector(x2 * mul + xo, y2 * mul + yo, height), u = uv, v = 0}
-            local c = {pos = Vector(x2 * mul + xo, y2 * mul + yo, 0     ), u = uv, v = uv}
-            local d = {pos = Vector(x1 * mul + xo, y1 * mul + yo, 0     ), u = 0 , v = uv}
+            local a = {pos = Vector(x1 * mul + xo, y1 * mul + yo, height), normal = normal, u = 0 , v = 0}
+            local b = {pos = Vector(x2 * mul + xo, y2 * mul + yo, height), normal = normal, u = uv, v = 0}
+            local c = {pos = Vector(x2 * mul + xo, y2 * mul + yo, 0     ), normal = normal, u = uv, v = uv}
+            local d = {pos = Vector(x1 * mul + xo, y1 * mul + yo, 0     ), normal = normal, u = 0 , v = uv}
             
             table.insert(vertices, a)
             table.insert(vertices, b)

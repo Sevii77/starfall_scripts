@@ -1,3 +1,5 @@
+--@name Matrix Rain
+--@author Sevii
 --@client
 
 local size = 8
