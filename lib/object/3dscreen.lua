@@ -278,7 +278,7 @@ else
 		if net.readBit() == 1 then
 			screen.holo = entity(net.readUInt(13)):toHologram()
 			
-			timer.simple(0, function()
+			timer.simple(1, function()
 				local size = Vector(screen.width / 2, screen.height / 2, 1)
 				
 				screen.holo:setRenderBounds(-size, size)
