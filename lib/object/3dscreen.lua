@@ -75,12 +75,16 @@ if SERVER then
 				checktype(pos, "Vector")
 				
 				self.holo:setPos(pos)
+				
+				return self
 			end,
 			
 			setAngles = function(self, ang)
 				checktype(ang, "Angle")
 				
 				self.holo:setAngles(ang)
+				
+				return self
 			end,
 			
 			setSize = function(self, size)
@@ -96,6 +100,8 @@ if SERVER then
 				local p3 = {pos = Vector( 3,  3, 0), normal = Vector(0, 0, 1), u = u, v = v}
 				local p4 = {pos = Vector(-3,  3, 0), normal = Vector(0, 0, 1), u = 0, v = v}
 				self.mesh = mesh.createFromTable({p2, p1, p4, p3, p2, p4})
+				
+				return self
 			end,
 			
 			setParent = function(self, ent, attachment)
@@ -104,6 +110,30 @@ if SERVER then
 				end
 				
 				self.holo:setParent(ent, attachment)
+				
+				return self
+			end,
+			
+			------------------------------
+			
+			mirror = function(self, screen)
+				return self
+			end,
+			
+			setEnabled = function(self, state)
+				return self
+			end,
+			
+			setClear = function(self, state)
+				return self
+			end,
+			
+			setClearColor = function(self, color)
+				return self
+			end,
+			
+			setRender = function(self, func)
+				return self
 			end
 		},
 		
@@ -248,7 +278,7 @@ else
 		if net.readBit() == 1 then
 			screen.holo = entity(net.readUInt(13)):toHologram()
 			
-			timer.simple(1, function()
+			timer.simple(0, function()
 				local size = Vector(screen.width / 2, screen.height / 2, 1)
 				
 				screen.holo:setRenderBounds(-size, size)
@@ -381,24 +411,64 @@ else
 						self.holo:setMeshMaterial(self.material)
 					end
 				end
+				
+				return self
 			end,
 			
 			setEnabled = function(self, state)
 				self.enabled = state and true or false
+				
+				return self
 			end,
 			
 			setClear = function(self, state)
 				self.clear = state and true or false
+				
+				return self
 			end,
 			
 			setClearColor = function(self, color)
 				self.bg_color = color
+				
+				if self.material then
+					if color.a ~= 255 then
+						self.material:setInt("$flags", 0x0100 + 0x0010 + 0x2000)
+					else
+						self.material:setInt("$flags", 0x0100 + 0x0010)
+					end
+				end
+				
+				return self
 			end,
 			
 			setRender = function(self, func)
 				checktype(func, "function")
 				
 				self.render = func
+				
+				return self
+			end,
+			
+			------------------------------
+			
+			destroy = function(self)
+				return self
+			end,
+			
+			setPos = function(self, pos)
+				return self
+			end,
+			
+			setAngles = function(self, ang)
+				return self
+			end,
+			
+			setSize = function(self, size)
+				return self
+			end,
+			
+			setParent = function(self, ent, attachment)
+				return self
 			end
 		},
 		
