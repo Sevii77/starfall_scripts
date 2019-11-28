@@ -52,7 +52,7 @@ function networking.send(network_name, data, ply, unreliable)
 	assert(n, "Tried to network with invalid network name " .. network_name)
 	
 	net.start("")
-	net.writeBit(false)
+	net.writeBool(false)
 	net.writeUInt(n.id, 5)
 	n.pt.write(data)
 	net.send(ply, unreliable)
@@ -70,9 +70,9 @@ function networking.request(network_name, callback, ply)
 	local id = networking.names_r[network_name]
 	
 	net.start("")
-	net.writeBit(true)
+	net.writeBool(true)
 	net.writeUInt(id, 5)
-	net.writeBit(false)
+	net.writeBool(false)
 	net.send(ply)
 	
 	networking.requests[id] = {
@@ -84,7 +84,7 @@ end
 ----------------------------------------
 
 net.receive("", function(bits, ply)
-	if net.readBit() == 0 then -- Normal
+	if not net.readBool() then -- Normal
 		local id = net.readUInt(5)
 		local data = networking.names_id[id].pt.read()
 		
@@ -94,7 +94,7 @@ net.receive("", function(bits, ply)
 	else -- Request
 		local id = net.readUInt(5)
 		
-		if net.readBit() == 1 then -- Is it a response
+		if net.readBool() then -- Is it a response
 			local request = networking.requests[id]
 			
 			if request and request.ply == ply then
@@ -105,9 +105,9 @@ net.receive("", function(bits, ply)
 		else
 			if networking.request_receivers[id] then
 				net.start("")
-				net.writeBit(true)
+				net.writeBool(true)
 				net.writeUInt(id, 5)
-				net.writeBit(true)
+				net.writeBool(true)
 				networking.request_receivers[id](ply, bits)
 				net.send(ply)
 			end

@@ -42,7 +42,7 @@ if SERVER then
 		net.writeUInt(settings.cells, 5)
 		for x, cells in pairs(game.cells) do
 			for y, cell in pairs(cells) do
-				net.writeBit(cell)
+				net.writeBool(cell)
 			end
 		end
 		
@@ -127,7 +127,7 @@ if SERVER then
 			game.p1 = ply
 			
 			net.start("join")
-			net.writeBit(true)
+			net.writeBool(true)
 			net.writeUInt(ply:getUserID(), 12)
 			net.send()
 			
@@ -136,7 +136,7 @@ if SERVER then
 			game.p2 = ply
 			
 			net.start("join")
-			net.writeBit(false)
+			net.writeBool(false)
 			net.writeUInt(ply:getUserID(), 12)
 			net.send()
 			
@@ -197,7 +197,7 @@ else
 			game.cells[x] = {}
 			
 			for y = 0, settings.cells - 1 do
-				game.cells[x][y] = net.readBit() == 1
+				game.cells[x][y] = net.readBool()
 			end
 		end
 		
@@ -223,7 +223,7 @@ else
 	end)
 	
 	net.receive("join", function()
-		if net.readBit() == 1 then
+		if net.readBool() then
 			game.p1 = player(net.readUInt(12))
 			
 			if game.p1 == player() then
@@ -278,7 +278,7 @@ else
 		local cx, cy = render.cursorPos()
 		
 		if cx and cx > 0 and cx < 511 and cy > 0 and cy < 511 then
-			if game.player != 0 then
+			if game.player ~= 0 then
 				target = Vector(math.floor(cx / cs), math.floor(cy / cs))
 			end
 			

@@ -7,6 +7,9 @@ local render_popMatrix = render.popMatrix
 
 -- matrix: the VMatrix
 -- absolute: should the matrix be absolute to the render contex or stacked ontop of previously pushed matricies
+--[[
+    These 2 functions are absolutly useless, never really realized pushMatrix had a 2nd argument to allow for matrix stacking :D
+]]
 function render.pushMatrix(matrix, absolute)
     if #matrix_stack > 0 then
         if not absolute then

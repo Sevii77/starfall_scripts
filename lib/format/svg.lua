@@ -97,7 +97,7 @@ local function getColor(color)
 			return Color(tonumber("0x" .. string.sub(color, 1, 2)), tonumber("0x" .. string.sub(color, 3, 4)), tonumber("0x" .. string.sub(color, 5, 6)))
 		end
 	else
-		return colors[string.lower(color)]
+		return colors[string.lower(color)] or render.getColor()
 	end
 end
 
@@ -364,15 +364,24 @@ function svg.createSVGDrawFunction(svg_data)
 	local objs = {}
 	
 	local svg_data = xml.xmlToTable(svg_data)
-	for _, object in pairs(svg_data[1].children) do
-		local func = objects[object.type]
-		if func then
-			table.insert(objs, {
-				func = func.draw,
-				data = func.create(object.attributes)
-			})
+	
+	local function doChildren(tbl)
+		for _, object in pairs(tbl) do
+			if object.type == "g" then
+				doChildren(object.children)
+			else
+				local func = objects[object.type]
+				if func then
+					table.insert(objs, {
+						func = func.draw,
+						data = func.create(object.attributes)
+					})
+				end
+			end
 		end
 	end
+	
+	doChildren(svg_data[1].children)
 	
 	local viewbox = string.split(svg_data[1].attributes.viewBox, " ")
 	local vx, vy, vw, vh = tonumber(viewbox[1]), tonumber(viewbox[2]), tonumber(viewbox[3]), tonumber(viewbox[4])

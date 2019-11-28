@@ -16,7 +16,7 @@ if SERVER then
 		
 		net.start("lib_3dscreen")
 		net.writeUInt(index, 8)
-		net.writeBit(true)
+		net.writeBool(true)
 		net.writeUInt(screen.holo:entIndex(), 13)
 		net.send(ply)
 	end)
@@ -64,7 +64,7 @@ if SERVER then
 				
 				net.start("lib_3dscreen")
 				net.writeUInt(self.index, 8)
-				net.writeBit(false)
+				net.writeBool(false)
 				net.send()
 				
 				screens[self.index] = nil
@@ -275,7 +275,7 @@ else
 		
 		if not screen then return end
 		
-		if net.readBit() == 1 then
+		if net.readBool() then
 			screen.holo = entity(net.readUInt(13)):toHologram()
 			
 			timer.simple(1, function()
