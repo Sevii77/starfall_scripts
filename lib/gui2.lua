@@ -126,6 +126,7 @@ GUI = class {
 		_w = 0,
 		_h = 0,
 		_objects = {},
+		_object_refs = {},
 		_render_order = {},
 		_hover_object = nil,
 		_last_click = 0,
@@ -152,7 +153,7 @@ GUI = class {
 			local element = GUI.elements[name]
 			
 			if not element then
-				error(name .. " is not a valid element", 2)
+				error(tostring(name) .. " is not a valid element", 2)
 			end
 			
 			--
@@ -173,15 +174,18 @@ GUI = class {
 				
 				self._objects[object] = nil
 			end
+			obj._theme = self.theme
 			obj._changed = function(o, simple)
 				self:_changed(o, simple)
 			end
 			
 			object.object = obj
 			
+			self._object_refs[obj] = object
+			
 			if parent then
-				self._objects[parent].children[obj] = object
-				table.insert(self._objects[parent].order, 1, obj)
+				self._object_refs[parent].children[obj] = object
+				table.insert(self._object_refs[parent].order, 1, obj)
 			else
 				self._objects[obj] = object
 				table.insert(self._render_order, 1, obj)
@@ -201,44 +205,6 @@ GUI = class {
 			return obj
 		end,
 		
-		-- render = function(self)
-		-- 	if self._redraw_all then
-		-- 		local sx, sy = 1024 / self._w, 1024 / self._h
-				
-		-- 		local function draw(objects, px, py, px2, py2)
-		-- 			for obj, data in pairs(objects) do
-		-- 				local m = Matrix()
-		-- 				m:setTranslation(obj.pos)
-						
-		-- 				render.pushMatrix(m)
-		-- 				local x, y = math.max(px, obj.x * sx + px), math.max(py, obj.y * sy + py)
-		-- 				local x2, y2 = math.min(px2, x + obj.w * sx), math.min(py2, y + obj.h * sy)
-		-- 				render.enableScissorRect(x, y, x2, y2)
-		-- 				obj:_draw(self._theme)
-		-- 				render.disableScissorRect()
-		-- 				draw(data.children, x, y, x2, y2)
-		-- 				render.popMatrix()
-		-- 			end
-		-- 		end
-				
-		-- 		local m = Matrix()
-		-- 		m:setScale(Vector(sx, sy))
-				
-		-- 		render.pushMatrix(m, true)
-		-- 		render.selectRenderTarget(self._rtid)
-		-- 		render.clear(clearcolor)
-		-- 		draw(self._objects, 0, 0, self._w * sx, self._h * sy)
-		-- 		render.selectRenderTarget()
-		-- 		render.popMatrix()
-				
-		-- 		self._redraw_all = false
-		-- 	end
-			
-		-- 	render.setRenderTargetTexture(self._rtid)
-		-- 	render.setRGBA(255, 255, 255, 255)
-		-- 	render.drawTexturedRect(0, 0, self._w, self._h)
-		-- end,
-		
 		render = function(self)
 			if self._redraw_all then
 				local sx, sy = 1024 / self._w, 1024 / self._h
@@ -253,7 +219,7 @@ GUI = class {
 					local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
 					object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
 					render.enableScissorRect(x * sx, y * sy, x2 * sx, y2 * sy)
-					obj:_draw(self._theme)
+					obj:_draw()
 					render.disableScissorRect()
 					for i = #object.order, 1, -1 do
 						draw(object.children[object.order[i]], x, y, x2, y2)
@@ -293,7 +259,7 @@ GUI = class {
 				local x, y = math.max(px, obj.x + px), math.max(py, obj.y + py)
 				local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
 				object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
-				obj:_draw(self._theme)
+				obj:_draw()
 				for i = #object.order, 1, -1 do
 					draw(object.children[object.order[i]], x, y, x2, y2)
 				end
@@ -420,6 +386,15 @@ GUI = class {
 				end
 				
 				self._redraw_all = true
+				
+				local function dobj(objects)
+					for obj, data in pairs(objects) do
+						local b = data.global_bounding
+						obj._theme = self._theme
+						dobj(data.children)
+					end
+				end
+				dobj(self._objects)
 			end,
 			
 			get = function(self)

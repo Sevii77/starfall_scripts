@@ -43,6 +43,8 @@ local label = gui:create("label", container)
 label.pos = Vector(120, 10)
 label.size = Vector(400, 30)
 label.text = "Label"
+label.textAlignmentX = 0
+label.textAlignmentY = 3
 
 -- Slider
 local slider = gui:create("slider", container)

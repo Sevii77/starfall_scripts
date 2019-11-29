@@ -29,9 +29,7 @@ return {
 			]]
 		end,
 		
-		_draw = function(self, theme)
-			self._theme = theme
-			
+		_draw = function(self)
 			self:onDraw(self._w, self._h)
 			self:onDrawOver(self._w, self._h)
 		end,
