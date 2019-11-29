@@ -279,6 +279,18 @@ GUI = class {
 			end
 		end,
 		
+		renderDebug = function(self)
+			render.setRGBA(255, 0, 255, 255)
+			for obj, object in pairs(self._object_refs) do
+				local b = object.global_bounding
+				render.drawLine(b.x, b.y, b.x2, b.y)
+				render.drawLine(b.x, b.y, b.x, b.y2)
+				render.drawLine(b.x, b.y2, b.x2, b.y2)
+				render.drawLine(b.x2, b.y, b.x2, b.y2)
+				render.drawLine(b.x, b.y, b.x2, b.y2)
+			end
+		end,
+		
 		think = function(self)
 			-- Remove objects
 			if table.count(self._remove_queue) > 0 then
@@ -333,9 +345,9 @@ GUI = class {
 							local h = dobj(object.children[child])
 							if h then
 								hover = h
+								
+								break
 							end
-							
-							break
 						end
 						
 						return hover
