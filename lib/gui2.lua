@@ -128,6 +128,7 @@ GUI = class {
 		_objects = {},
 		_object_refs = {},
 		_render_order = {},
+		_remove_queue = {},
 		_focus_object = nil,
 		_last_click = 0,
 		_clicking_objects = {left = {}, right = {}},
@@ -169,16 +170,17 @@ GUI = class {
 			local obj = element.class()
 			obj.parent = parent
 			obj.remove = function(o)
-				for child, child_object in pairs(o.children) do
-					b:remove()
+				for child, child_object in pairs(self._object_refs[obj].children) do
+					child:remove()
 				end
 				
-				if parent then
-					self._object_refs[parent].children[obj] = nil
-				else
-					self._objects[obj] = nil
-				end
-				self._object_refs[obj] = object
+				self._remove_queue[o] = true
+				-- if parent then
+				-- 	self._object_refs[parent].children[obj] = nil
+				-- else
+				-- 	self._objects[obj] = nil
+				-- end
+				-- self._object_refs[obj] = object
 			end
 			obj._theme = self.theme
 			obj._changed = function(o, simple)
@@ -221,7 +223,7 @@ GUI = class {
 					m:setTranslation(obj.pos)
 					
 					render.pushMatrix(m)
-					local x, y = math.max(px, obj.x + px), math.max(py, obj.y + py)
+					local x, y = math.max((px or -9999), obj.x + (px or 0)), math.max((py or -9999), obj.y + (py or 0))
 					local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
 					object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
 					render.enableScissorRect(x * sx, y * sy, x2 * sx, y2 * sy)
@@ -240,7 +242,7 @@ GUI = class {
 				render.selectRenderTarget(self._rtid)
 				render.clear(clearcolor)
 				for i = #self._render_order, 1, -1 do
-					draw(self._objects[self._render_order[i]], 0, 0, self._w, self._h)
+					draw(self._objects[self._render_order[i]], nil, nil, self._w, self._h)
 				end
 				render.selectRenderTarget()
 				render.popMatrix()
@@ -262,7 +264,7 @@ GUI = class {
 				m:setTranslation(obj.pos)
 				
 				render.pushMatrix(m)
-				local x, y = math.max(px, obj.x + px), math.max(py, obj.y + py)
+				local x, y = math.max((px or -9999), obj.x + (px or 0)), math.max((py or -9999), obj.y + (py or 0))
 				local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
 				object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
 				obj:_draw()
@@ -273,11 +275,33 @@ GUI = class {
 			end
 			
 			for i = #self._render_order, 1, -1 do
-				draw(self._objects[self._render_order[i]], 0, 0, self._w, self._h)
+				draw(self._objects[self._render_order[i]], nil, nil, self._w, self._h)
 			end
 		end,
 		
 		think = function(self)
+			-- Remove objects
+			if table.count(self._remove_queue) > 0 then
+				for obj, _ in pairs(self._remove_queue) do
+					for i, o in pairs(self._render_order) do
+						if o == obj then
+							table.remove(self._render_order, i)
+						end
+					end
+					
+					if self._objects[obj] then
+						self._objects[obj] = nil
+					else
+						local object = self._object_refs[obj]
+						object.parent.children[obj] = nil
+					end
+				end
+				self._remove_queue = {}
+				
+				self._redraw_all = true
+			end
+			
+			-- Think
 			local _, cx, cy = xpcall(render.cursorPos, input.getCursorPos)
 			
 			local function think(objects)
