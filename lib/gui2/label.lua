@@ -20,8 +20,8 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
-			self.base.onDraw(self, w, h)
-			-- self.base()
+			-- self.base.onDraw(self, w, h)
+			self.base()
 			
 			render.setFont(self.font)
 			render.setColor(self.textColor)

@@ -43,7 +43,35 @@ return {
 			
 		end,
 		
+		_press = function(self)
+			
+		end,
+		
+		_pressRight = function(self)
+			
+		end,
+		
+		_pressDouble = function(self)
+			
+		end,
+		
+		_release = function(self)
+			
+		end,
+		
+		_releaseRight = function(self)
+			
+		end,
+		
 		_hover = function(self)
+			
+		end,
+		
+		_hoverStart = function(self)
+			
+		end,
+		
+		_hoverEnd = function(self)
 			
 		end,
 		
