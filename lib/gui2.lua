@@ -295,18 +295,27 @@ GUI = class {
 			-- Remove objects
 			if table.count(self._remove_queue) > 0 then
 				for obj, _ in pairs(self._remove_queue) do
-					for i, o in pairs(self._render_order) do
-						if o == obj then
-							table.remove(self._render_order, i)
-						end
-					end
-					
 					if self._objects[obj] then
+						for i, o in pairs(self._render_order) do
+							if o == obj then
+								table.remove(self._render_order, i)
+							end
+						end
+						
 						self._objects[obj] = nil
 					else
-						local object = self._object_refs[obj]
-						self._object_refs[object.parent].children[obj] = nil
+						local parent = self._object_refs[self._object_refs[obj].parent]
+						
+						for i, o in pairs(parent.order) do
+							if o == obj then
+								table.remove(parent.order, i)
+							end
+						end
+						
+						parent.children[obj] = nil
 					end
+					
+					self._object_refs[obj] = nil
 				end
 				self._remove_queue = {}
 				
