@@ -20,7 +20,6 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
-			-- self.base.onDraw(self, w, h)
 			self.base()
 			
 			render.setFont(self.font)
@@ -36,7 +35,7 @@ return {
 			set = function(self, text)
 				self._text = text
 				
-				self:_changed()
+				self:_changed(true)
 			end,
 			
 			get = function(self)
@@ -48,7 +47,7 @@ return {
 			set = function(self, font)
 				self._font = font
 				
-				self:_changed()
+				self:_changed(true)
 			end,
 			
 			get = function(self)
@@ -60,7 +59,7 @@ return {
 			set = function(self, color)
 				self._text_color = color
 				
-				self:_changed()
+				self:_changed(true)
 			end,
 			
 			get = function(self)

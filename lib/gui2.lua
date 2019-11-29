@@ -2,11 +2,21 @@
 --@include ./class.lua
 --@client
 
+--[[
+	TODO:
+	have a more advanced changed system:
+		if an element has changed in a minor way (changed something within the same bounds)
+		make it only redraw the element itself and not the whole gui
+	docking
+	more elements
+]]
+
 local class, checktype = unpack(require("./class.lua"))
 
 ----------------------------------------
 
 local guis = {}
+local clearcolor = Color(0, 0, 0, 0)
 
 hook.add("inputPressed", "lib.gui", function(key)
 	for gui, _ in pairs(guis) do
@@ -67,10 +77,13 @@ GUI = class {
 	type = "gui",
 	
 	constructor = function(self, w, h)
+		self._id = math.random()
 		self._w = w or 512
 		self._h = h or (w or 512)
-		
 		self.theme = "dark"
+		self._rtid = "lib.gui:" .. self._id
+		
+		render.createRenderTarget(self._rtid)
 		
 		guis[self] = self
 	end,
@@ -78,6 +91,7 @@ GUI = class {
 	----------------------------------------
 	
 	data = {
+		_id = 0,
 		_buttons = {left = {[107] = true, [15] = true}, right = {[108] = true}},
 		_doubleclick_time = 0.25,
 		_theme = false,
@@ -88,10 +102,21 @@ GUI = class {
 		_hover_object = nil,
 		_last_click = 0,
 		_clicking_objects = {left = {}, right = {}},
+		_rtid = "",
+		_redraw = {},
+		_redraw_all = false,
+		
+		------------------------------
+		
+		_changed = function(self, object, simple)
+			self._redraw_all = true
+		end,
 		
 		------------------------------
 		
 		destroy = function(self)
+			render.destroyRenderTarget(self._rtid)
+			
 			guis[self] = nil
 		end,
 		
@@ -112,13 +137,15 @@ GUI = class {
 			
 			local obj = element.class()
 			obj.parent = parent
-			-- obj.base = element.base
 			obj.remove = function(o)
 				for child, child_object in pairs(o.children) do
 					b:remove()
 				end
 				
 				self._objects[object] = nil
+			end
+			obj._changed = function(o, simple)
+				self:_changed(o, simple)
 			end
 			
 			object.object = obj
@@ -146,6 +173,44 @@ GUI = class {
 		end,
 		
 		render = function(self)
+			if self._redraw_all then
+				local sx, sy = 1024 / self._w, 1024 / self._h
+				
+				local function draw(objects, px, py, px2, py2)
+					for obj, data in pairs(objects) do
+						local m = Matrix()
+						m:setTranslation(obj.pos)
+						
+						render.pushMatrix(m)
+						local x, y = math.max(px, obj.x * sx + px), math.max(py, obj.y * sy + py)
+						local x2, y2 = math.min(px2, x + obj.w * sx), math.min(py2, y + obj.h * sy)
+						render.enableScissorRect(x, y, x2, y2)
+						obj:_draw(self._theme)
+						render.disableScissorRect()
+						draw(data.children, x, y, x2, y2)
+						render.popMatrix()
+					end
+				end
+				
+				local m = Matrix()
+				m:setScale(Vector(sx, sy))
+				
+				render.pushMatrix(m, true)
+				render.selectRenderTarget(self._rtid)
+				render.clear(clearcolor)
+				draw(self._objects, 0, 0, self._w * sx, self._h * sy)
+				render.selectRenderTarget()
+				render.popMatrix()
+				
+				self._redraw_all = false
+			end
+			
+			render.setRenderTargetTexture(self._rtid)
+			render.setRGBA(255, 255, 255, 255)
+			render.drawTexturedRect(0, 0, self._w, self._h)
+		end,
+		
+		renderDirect = function(self)
 			local function draw(objects)
 				for obj, data in pairs(objects) do
 					local m = Matrix()
@@ -259,6 +324,8 @@ GUI = class {
 					
 					self._theme = table.copy(GUI.themes[theme])
 				end
+				
+				self._redraw_all = true
 			end,
 			
 			get = function(self)
@@ -398,49 +465,10 @@ GUI = class {
 				end
 			end
 			
-			-- local base = {
-			-- 	__newindex = function()
-			-- 		error("base is readonly", 2)
-			-- 	end
-			-- }
-			
-			-- if inherit then
-			-- 	local d = GUI.elements[inherit].raw
-				
-			-- 	for k, v in pairs(d.data) do
-			-- 		local t = type(v) == "table"
-			-- 		if not data.data[k] then
-			-- 			data.data[k] = t and table.copy(v) or v
-			-- 		end
-					
-			-- 		base[k] = t and table.copy(v) or v
-			-- 	end
-				
-			-- 	for k, v in pairs(d.properties) do
-			-- 		if not data.properties[k] then
-			-- 		local t = type(v) == "table"
-			-- 			data.properties[k] = t and table.copy(v) or v
-			-- 		end
-					
-			-- 		base[k] = t and table.copy(v) or v
-					
-			-- 		if t and v.set then
-			-- 			base["set" .. string.upper(k[1]) .. string.sub(k, 2)] = v.set
-			-- 		end
-					
-			-- 		if t and v.get then
-			-- 			base["get" .. string.upper(k[1]) .. string.sub(k, 2)] = v.get
-			-- 		end
-			-- 	end
-			-- end
-			
-			-- base.__index = base
-			
 			-- Store element
 			GUI.elements[name] = {
 				raw = data,
 				class = class(data),
-				-- base = setmetatable({}, base),
 				constructor = constructor,
 				inherit = GUI.elements[inherit]
 			}

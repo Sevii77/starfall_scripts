@@ -7,6 +7,7 @@ return {
 	----------------------------------------
 	
 	data = {
+		_hovering = false,
 		_click = false,
 		_click_right = false,
 		_clickprogress = 0,
@@ -19,10 +20,21 @@ return {
 		end,
 		
 		_tick = function(self)
-			self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * 20)
+			if self._hovering then
+				if self._hoverprogress < 1 then
+					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * 20)
+					self:_changed(true)
+				end
+			elseif self._hoverprogress > 0 then
+				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * 20)
+				self:_changed(true)
+			end
 			
 			if self._click or self._click_right then
-				self._clickprogress = math.min(1, self._clickprogress + timer.frametime() * 20)
+				if self._clickprogress < 1 then
+					self._clickprogress = math.min(1, self._clickprogress + timer.frametime() * 20)
+					self:_changed(true)
+				end
 				
 				if self._click then
 					self:onHold()
@@ -30,8 +42,9 @@ return {
 				if self.click_right then
 					self:onRightHold()
 				end
-			else
+			elseif self._clickprogress > 0 then
 				self._clickprogress = math.max(0, self._clickprogress - timer.frametime() * 20)
+				self:_changed(true)
 			end
 		end,
 		
@@ -65,16 +78,18 @@ return {
 		
 		_hover = function(self)
 			self:onHover()
-			
-			self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * 40) -- 40 instead of 20 to combat _tick
 		end,
 		
 		_hoverStart = function(self)
 			self:onHoverBegin()
+			
+			self._hovering = true
 		end,
 		
 		_hoverEnd = function(self)
 			self:onHoverEnd()
+			
+			self._hovering = false
 		end,
 		
 		------------------------------

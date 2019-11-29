@@ -12,7 +12,7 @@ container.size = Vector(100, 60)
 
 local label = gui:create("label", container)
 label.pos = Vector(20, 20)
-label.size = Vector(50, 30)
+label.size = Vector(150, 30)
 label.text = "Label"
 
 local lighttheme = gui:create("button")
@@ -34,16 +34,19 @@ end
 local button = gui:create("button")
 button.pos = Vector(50, 150)
 button.size = Vector(200, 50)
-button.text = "Double click on me :D"
+button.text = "Double click on me"
 button.onDoubleClick = function(self)
-	button.text = "double click"
+	button.text = "Good Job :D"
 	
 	timer.simple(1, function()
-		button.text = "Button :D"
+		button.text = "Double click on me"
 	end)
 end
 
 hook.add("render", "", function()
 	gui:think()
 	gui:render()
+	
+	render.setRGBA(255, 255, 255, 255)
+	render.drawSimpleText(0, 0, tostring(math.round(quotaAverage() * 1000000)))
 end)

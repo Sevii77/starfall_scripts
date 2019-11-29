@@ -24,11 +24,13 @@ return {
 		
 		------------------------------
 		
-		_changed = function(self)
+		_changed = function(self, simple)
 			--[[
 				Created in core
 				
 				called whenever it needs to be redrawn
+				
+				simple: is true if only the current element needs to be redrawn
 			]]
 		end,
 		
@@ -187,7 +189,7 @@ return {
 			set = function(self, borderSize)
 				self._border_size = borderSize
 				
-				self:_changed()
+				self:_changed(true)
 			end,
 			
 			get = function(self)
@@ -199,7 +201,7 @@ return {
 			set = function(self, color)
 				self._main_color = color
 				
-				self:_changed()
+				self:_changed(true)
 			end,
 			
 			get = function(self)
@@ -211,7 +213,7 @@ return {
 			set = function(self, color)
 				self._secondary_color = color
 				
-				self:_changed()
+				self:_changed(true)
 			end,
 			
 			get = function(self)
@@ -223,7 +225,7 @@ return {
 			set = function(self, color)
 				self._accent_color = color
 				
-				self:_changed()
+				self:_changed(true)
 			end,
 			
 			get = function(self)
