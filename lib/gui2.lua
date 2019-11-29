@@ -306,13 +306,15 @@ GUI = class {
 					else
 						local parent = self._object_refs[self._object_refs[obj].parent]
 						
-						for i, o in pairs(parent.order) do
-							if o == obj then
-								table.remove(parent.order, i)
+						if parent then
+							for i, o in pairs(parent.order) do
+								if o == obj then
+									table.remove(parent.order, i)
+								end
 							end
+							
+							parent.children[obj] = nil
 						end
-						
-						parent.children[obj] = nil
 					end
 					
 					self._object_refs[obj] = nil
