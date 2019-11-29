@@ -162,7 +162,8 @@ GUI = class {
 				parent = parent,
 				children = {},
 				order = {},
-				global_bounding = {x = 0, y = 0, x2 = 0, y2 = 0}
+				global_bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
+				cursor = {x = 0, y = 0}
 			}
 			
 			local obj = element.class()
@@ -276,29 +277,17 @@ GUI = class {
 			end
 		end,
 		
-		-- renderDirect = function(self)
-		-- 	local function draw(objects)
-		-- 		for obj, data in pairs(objects) do
-		-- 			local m = Matrix()
-		-- 			m:setTranslation(obj.pos)
-					
-		-- 			render.pushMatrix(m)
-		-- 				obj:_draw(self._theme)
-		-- 				draw(data.children)
-		-- 			render.popMatrix()
-		-- 		end
-		-- 	end
-			
-		-- 	draw(self._objects)
-		-- end,
-		
 		think = function(self)
 			local _, cx, cy = xpcall(render.cursorPos, input.getCursorPos)
 			
 			local function think(objects)
 				for obj, data in pairs(objects) do
 					local b = data.global_bounding
-					obj:_think(cx and cx - b.x or nil, cy and cy - b.y or nil)
+					local x, y = cx and cx - b.x or nil, cy and cy - b.y or nil
+					
+					obj:_think(x, y)
+					data.cursor = {x = x, y = y}
+					
 					think(data.children)
 				end
 			end
@@ -321,6 +310,8 @@ GUI = class {
 							if h then
 								hover = h
 							end
+							
+							break
 						end
 						
 						return hover
@@ -347,6 +338,20 @@ GUI = class {
 				if last then
 					last.object:_hoverEnd()
 				end
+			end
+		end,
+		
+		------------------------------
+		
+		getCursorPos = function(self, obj)
+			if obj then
+				local p = self._object_refs[obj].cursor
+				
+				return p.x, p.y
+			else
+				local _, x, y = xpcall(render.cursorPos, input.getCursorPos)
+				
+				return x, y
 			end
 		end,
 		
