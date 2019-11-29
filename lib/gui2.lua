@@ -305,7 +305,7 @@ GUI = class {
 						self._objects[obj] = nil
 					else
 						local object = self._object_refs[obj]
-						object.parent.children[obj] = nil
+						self._object_refs[object.parent].children[obj] = nil
 					end
 				end
 				self._remove_queue = {}
