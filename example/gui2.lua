@@ -6,15 +6,6 @@ GUI = require("../lib/gui2.lua")
 local gui = GUI()
 -- gui.theme = "light"
 
-local container = gui:create("container")
-container.pos = Vector(100, 300)
-container.size = Vector(100, 60)
-
-local label = gui:create("label", container)
-label.pos = Vector(20, 20)
-label.size = Vector(150, 30)
-label.text = "Label"
-
 local lighttheme = gui:create("button")
 lighttheme.pos = Vector(50, 50)
 lighttheme.size = Vector(100, 50)
@@ -41,6 +32,29 @@ button.onDoubleClick = function(self)
 	timer.simple(1, function()
 		button.text = "Double click on me"
 	end)
+end
+
+
+local container = gui:create("container")
+container.pos = Vector(50, 250)
+container.size = Vector(400, 250)
+
+local label = gui:create("label", container)
+label.pos = Vector(120, 10)
+label.size = Vector(400, 30)
+label.text = "Label"
+
+-- Slider
+local slider = gui:create("slider", container)
+slider.pos = Vector(25, 50)
+slider.size = Vector(150, 20)
+
+local slider_style = gui:create("button", container)
+slider_style.pos = Vector(200, 50)
+slider_style.size = Vector(150, 20)
+slider_style.text = "Change slider style"
+slider_style.onClick = function()
+	slider.style = slider.style == 1 and 2 or 1
 end
 
 hook.add("render", "", function()

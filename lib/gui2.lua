@@ -15,6 +15,34 @@ local class, checktype = unpack(require("./class.lua"))
 
 ----------------------------------------
 
+local themes = {
+	light = {
+		main = Color(220, 220, 220),
+		secondary = Color(180, 180, 180),
+		accent = Color(50, 255, 180),
+		text = Color(30, 30, 30),
+		
+		borderSize = 1,
+		barSize = 4,
+		
+		font = render.createFont("Roboto", 18, 600)
+	},
+	
+	dark = {
+		main = Color(50, 50, 50),
+		secondary = Color(90, 90, 90),
+		accent = Color(50, 255, 180),
+		text = Color(255, 255, 255),
+		
+		borderSize = 1,
+		barSize = 4,
+		
+		font = render.createFont("Roboto", 18, 600)
+	}
+}
+
+----------------------------------------
+
 local guis = {}
 local clearcolor = Color(0, 0, 0, 0)
 
@@ -132,7 +160,8 @@ GUI = class {
 			local object = {
 				parent = parent,
 				children = {},
-				order = {}
+				order = {},
+				global_bounding = {x = 0, y = 0, x2 = 0, y2 = 0}
 			}
 			
 			local obj = element.class()
@@ -172,24 +201,64 @@ GUI = class {
 			return obj
 		end,
 		
+		-- render = function(self)
+		-- 	if self._redraw_all then
+		-- 		local sx, sy = 1024 / self._w, 1024 / self._h
+				
+		-- 		local function draw(objects, px, py, px2, py2)
+		-- 			for obj, data in pairs(objects) do
+		-- 				local m = Matrix()
+		-- 				m:setTranslation(obj.pos)
+						
+		-- 				render.pushMatrix(m)
+		-- 				local x, y = math.max(px, obj.x * sx + px), math.max(py, obj.y * sy + py)
+		-- 				local x2, y2 = math.min(px2, x + obj.w * sx), math.min(py2, y + obj.h * sy)
+		-- 				render.enableScissorRect(x, y, x2, y2)
+		-- 				obj:_draw(self._theme)
+		-- 				render.disableScissorRect()
+		-- 				draw(data.children, x, y, x2, y2)
+		-- 				render.popMatrix()
+		-- 			end
+		-- 		end
+				
+		-- 		local m = Matrix()
+		-- 		m:setScale(Vector(sx, sy))
+				
+		-- 		render.pushMatrix(m, true)
+		-- 		render.selectRenderTarget(self._rtid)
+		-- 		render.clear(clearcolor)
+		-- 		draw(self._objects, 0, 0, self._w * sx, self._h * sy)
+		-- 		render.selectRenderTarget()
+		-- 		render.popMatrix()
+				
+		-- 		self._redraw_all = false
+		-- 	end
+			
+		-- 	render.setRenderTargetTexture(self._rtid)
+		-- 	render.setRGBA(255, 255, 255, 255)
+		-- 	render.drawTexturedRect(0, 0, self._w, self._h)
+		-- end,
+		
 		render = function(self)
 			if self._redraw_all then
 				local sx, sy = 1024 / self._w, 1024 / self._h
 				
-				local function draw(objects, px, py, px2, py2)
-					for obj, data in pairs(objects) do
-						local m = Matrix()
-						m:setTranslation(obj.pos)
-						
-						render.pushMatrix(m)
-						local x, y = math.max(px, obj.x * sx + px), math.max(py, obj.y * sy + py)
-						local x2, y2 = math.min(px2, x + obj.w * sx), math.min(py2, y + obj.h * sy)
-						render.enableScissorRect(x, y, x2, y2)
-						obj:_draw(self._theme)
-						render.disableScissorRect()
-						draw(data.children, x, y, x2, y2)
-						render.popMatrix()
+				local function draw(object, px, py, px2, py2)
+					local obj = object.object
+					local m = Matrix()
+					m:setTranslation(obj.pos)
+					
+					render.pushMatrix(m)
+					local x, y = math.max(px, obj.x + px), math.max(py, obj.y + py)
+					local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
+					object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
+					render.enableScissorRect(x * sx, y * sy, x2 * sx, y2 * sy)
+					obj:_draw(self._theme)
+					render.disableScissorRect()
+					for i = #object.order, 1, -1 do
+						draw(object.children[object.order[i]], x, y, x2, y2)
 					end
+					render.popMatrix()
 				end
 				
 				local m = Matrix()
@@ -198,7 +267,9 @@ GUI = class {
 				render.pushMatrix(m, true)
 				render.selectRenderTarget(self._rtid)
 				render.clear(clearcolor)
-				draw(self._objects, 0, 0, self._w * sx, self._h * sy)
+				for i = #self._render_order, 1, -1 do
+					draw(self._objects[self._render_order[i]], 0, 0, self._w, self._h)
+				end
 				render.selectRenderTarget()
 				render.popMatrix()
 				
@@ -211,50 +282,73 @@ GUI = class {
 		end,
 		
 		renderDirect = function(self)
-			local function draw(objects)
-				for obj, data in pairs(objects) do
-					local m = Matrix()
-					m:setTranslation(obj.pos)
-					
-					render.pushMatrix(m)
-						obj:_draw(self._theme)
-						draw(data.children)
-					render.popMatrix()
+			local sx, sy = 1024 / self._w, 1024 / self._h
+			
+			local function draw(object, px, py, px2, py2)
+				local obj = object.object
+				local m = Matrix()
+				m:setTranslation(obj.pos)
+				
+				render.pushMatrix(m)
+				local x, y = math.max(px, obj.x + px), math.max(py, obj.y + py)
+				local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
+				object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
+				obj:_draw(self._theme)
+				for i = #object.order, 1, -1 do
+					draw(object.children[object.order[i]], x, y, x2, y2)
 				end
+				render.popMatrix()
 			end
 			
-			draw(self._objects)
+			for i = #self._render_order, 1, -1 do
+				draw(self._objects[self._render_order[i]], 0, 0, self._w, self._h)
+			end
 		end,
 		
-		think = function(self)
-			local function draw(objects)
-				for obj, data in pairs(objects) do
-					local m = Matrix()
-					m:setTranslation(obj.pos)
+		-- renderDirect = function(self)
+		-- 	local function draw(objects)
+		-- 		for obj, data in pairs(objects) do
+		-- 			local m = Matrix()
+		-- 			m:setTranslation(obj.pos)
 					
-					render.pushMatrix(m)
-						obj:_tick(self._theme)
-						draw(data.children)
-					render.popMatrix()
+		-- 			render.pushMatrix(m)
+		-- 				obj:_draw(self._theme)
+		-- 				draw(data.children)
+		-- 			render.popMatrix()
+		-- 		end
+		-- 	end
+			
+		-- 	draw(self._objects)
+		-- end,
+		
+		think = function(self)
+			local _, cx, cy = xpcall(render.cursorPos, input.getCursorPos)
+			
+			local function think(objects)
+				for obj, data in pairs(objects) do
+					local b = data.global_bounding
+					obj:_think(cx and cx - b.x or nil, cy and cy - b.y or nil)
+					think(data.children)
 				end
 			end
 			
-			draw(self._objects)
+			think(self._objects)
 			
 			-- Mouse stuff
 			local last = self._hover_object
 			self._hover_object = nil
 			
-			local _, cx, cy = xpcall(render.cursorPos, input.getCursorPos)
 			if cx then
 				local function dobj(object)
 					local obj = object.object
-					if cx > obj.x and cy > obj.y and cx < obj.x + obj.w and cy < obj.y + obj.h then
+					local b = object.global_bounding
+					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
 						local hover = object
 						
-						for child, child_object in pairs(object.children) do
+						for i, child in pairs(object.order) do
+							local child_object = object.children[child]
 							if dobj(child_object) then
-								hover = object
+								hover = child_object
 							end
 						end
 						
@@ -367,29 +461,7 @@ GUI = class {
 	----------------------------------------
 	
 	static_data = {
-		themes = {
-			light = {
-				main = Color(220, 220, 220),
-				secondary = Color(180, 180, 180),
-				accent = Color(50, 255, 180),
-				text = Color(30, 30, 30),
-				
-				borderSize = 1,
-				
-				font = render.createFont("Roboto", 18, 600)
-			},
-			
-			dark = {
-				main = Color(50, 50, 50),
-				secondary = Color(90, 90, 90),
-				accent = Color(50, 255, 180),
-				text = Color(255, 255, 255),
-				
-				borderSize = 1,
-				
-				font = render.createFont("Roboto", 18, 600)
-			}
-		},
+		themes = themes,
 		
 		elements = {},
 		

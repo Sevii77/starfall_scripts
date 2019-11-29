@@ -15,11 +15,7 @@ return {
 		
 		------------------------------
 		
-		_changed = function(self)
-			
-		end,
-		
-		_tick = function(self)
+		_think = function(self)
 			if self._hovering then
 				if self._hoverprogress < 1 then
 					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * 20)

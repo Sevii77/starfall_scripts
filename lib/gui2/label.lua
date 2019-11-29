@@ -13,12 +13,6 @@ return {
 		
 		------------------------------
 		
-		_changed = function(self)
-			
-		end,
-		
-		------------------------------
-		
 		onDraw = function(self, w, h)
 			self.base()
 			
