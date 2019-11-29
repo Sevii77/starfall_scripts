@@ -48,26 +48,26 @@ local clearcolor = Color(0, 0, 0, 0)
 
 hook.add("inputPressed", "lib.gui", function(key)
 	for gui, _ in pairs(guis) do
-		if gui._hover_object then
+		if gui._focus_object then
 			for k, _ in pairs(gui._buttons.left) do
 				if key == k then
-					gui._hover_object.object:_press()
+					gui._focus_object.object:_press()
 					
 					if timer.curtime() - gui._last_click < gui._doubleclick_time then
-						gui._hover_object.object:_pressDouble()
+						gui._focus_object.object:_pressDouble()
 					end
 					
 					gui._last_click = timer.curtime()
 					
-					table.insert(gui._clicking_objects.left, gui._hover_object)
+					table.insert(gui._clicking_objects.left, gui._focus_object)
 				end
 			end
 			
 			for k, _ in pairs(gui._buttons.right) do
 				if key == k then
-					gui._hover_object.object:_pressRight()
+					gui._focus_object.object:_pressRight()
 					
-					table.insert(gui._clicking_objects.right, gui._hover_object)
+					table.insert(gui._clicking_objects.right, gui._focus_object)
 				end
 			end
 		end
@@ -89,7 +89,7 @@ hook.add("inputReleased", "lib.gui", function(key)
 		for k, _ in pairs(gui._buttons.right) do
 			if key == k then
 				for _, obj in pairs(gui._clicking_objects.right) do
-					gui._hover_object.object:_releaseRight()
+					gui._focus_object.object:_releaseRight()
 				end
 				
 				gui._clicking_objects.right = {}
@@ -128,7 +128,7 @@ GUI = class {
 		_objects = {},
 		_object_refs = {},
 		_render_order = {},
-		_hover_object = nil,
+		_focus_object = nil,
 		_last_click = 0,
 		_clicking_objects = {left = {}, right = {}},
 		_rtid = "",
@@ -172,7 +172,12 @@ GUI = class {
 					b:remove()
 				end
 				
-				self._objects[object] = nil
+				if parent then
+					self._object_refs[parent].children[obj] = nil
+				else
+					self._objects[obj] = nil
+				end
+				self._object_refs[obj] = object
 			end
 			obj._theme = self.theme
 			obj._changed = function(o, simple)
@@ -301,8 +306,8 @@ GUI = class {
 			think(self._objects)
 			
 			-- Mouse stuff
-			local last = self._hover_object
-			self._hover_object = nil
+			local last = self._focus_object
+			self._focus_object = nil
 			
 			if cx then
 				local function dobj(object)
@@ -312,9 +317,9 @@ GUI = class {
 						local hover = object
 						
 						for i, child in pairs(object.order) do
-							local child_object = object.children[child]
-							if dobj(child_object) then
-								hover = child_object
+							local h = dobj(object.children[child])
+							if h then
+								hover = h
 							end
 						end
 						
@@ -325,7 +330,7 @@ GUI = class {
 				for i, obj in pairs(self._render_order) do
 					local hover = dobj(self._objects[obj])
 					if hover then
-						self._hover_object = hover
+						self._focus_object = hover
 						
 						hover.object:_hover()
 						
@@ -334,9 +339,9 @@ GUI = class {
 				end
 			end
 			
-			if self._hover_object ~= last then
-				if self._hover_object then
-					self._hover_object.object:_hoverStart()
+			if self._focus_object ~= last then
+				if self._focus_object then
+					self._focus_object.object:_hoverStart()
 				end
 				
 				if last then
