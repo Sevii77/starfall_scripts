@@ -13,19 +13,21 @@ end
 local styles = {
 	{
 		think = function(self, cx, cy)
+			local anim_speed = self.animationSpeed
+			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * 20)
+					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * 20)
+				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._holding then
 				if self._holdprogress < 1 then
-					self._holdprogress = math.min(1, self._holdprogress + timer.frametime() * 20)
+					self._holdprogress = math.min(1, self._holdprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 				
@@ -33,7 +35,7 @@ local styles = {
 					local last = self._progress
 					local progress = math.clamp((cx - self._h / 2) / (self._w - self._h), 0, 1)
 					self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
-					self._progress = (self.value - self.min) / (self._max - self._min)
+					self._progress = (self._value - self._min) / (self._max - self._min)
 					
 					if self._progress ~= last then
 						self:onChange(self._value)
@@ -43,7 +45,7 @@ local styles = {
 				
 				self:onHold()
 			elseif self._holdprogress > 0 then
-				self._holdprogress = math.max(0, self._holdprogress - timer.frametime() * 20)
+				self._holdprogress = math.max(0, self._holdprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 		end,
@@ -111,19 +113,21 @@ local styles = {
 	
 	{
 		think = function(self, cx, cy)
+			local anim_speed = self.animationSpeed
+			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * 20)
+					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * 20)
+				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._holding then
 				if self._holdprogress < 1 then
-					self._holdprogress = math.min(1, self._holdprogress + timer.frametime() * 20)
+					self._holdprogress = math.min(1, self._holdprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 				
@@ -131,7 +135,7 @@ local styles = {
 					local last = self._progress
 					local progress = math.clamp(cx / self._w, 0, 1)
 					self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
-					self._progress = (self.value - self.min) / (self._max - self._min)
+					self._progress = (self._value - self._min) / (self._max - self._min)
 					
 					if self._progress ~= last then
 						self:onChange(self._value)
@@ -141,7 +145,7 @@ local styles = {
 				
 				self:onHold()
 			elseif self._holdprogress > 0 then
-				self._holdprogress = math.max(0, self._holdprogress - timer.frametime() * 20)
+				self._holdprogress = math.max(0, self._holdprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 		end,
@@ -178,6 +182,7 @@ return {
 	data = {
 		_value = 0,
 		_bar_size = false,
+		_animation_speed = false,
 		_min = 0,
 		_max = 1,
 		_round = 2,
@@ -248,7 +253,17 @@ return {
 			end,
 			
 			get = function(self)
-				return self._border_size or self._theme.barSize
+				return self._bar_size or self._theme.barSize
+			end
+		},
+		
+		animationSpeed = {
+			set = function(self, value)
+				self._animation_speed = value
+			end,
+			
+			get = function(self)
+				return self._animation_speed or self._theme.animationSpeed
 			end
 		},
 		
@@ -326,6 +341,7 @@ return {
 		value = {
 			set = function(self, value)
 				self._value = value
+				self._progress = (self._value - self._min) / (self._max - self._min)
 				
 				self:_changed(true)
 			end,

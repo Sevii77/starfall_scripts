@@ -23,7 +23,9 @@ local themes = {
 		text = Color(30, 30, 30),
 		
 		borderSize = 1,
+		borderAccentCorner = true,
 		barSize = 4,
+		animationSpeed = 20,
 		
 		font = render.createFont("Roboto", 18, 600)
 	},
@@ -35,7 +37,9 @@ local themes = {
 		text = Color(255, 255, 255),
 		
 		borderSize = 1,
+		borderAccentCorner = true,
 		barSize = 4,
+		animationSpeed = 20,
 		
 		font = render.createFont("Roboto", 18, 600)
 	}
@@ -219,11 +223,13 @@ GUI = class {
 				
 				local function draw(object, px, py, px2, py2)
 					local obj = object.object
+					local pos = obj._pos
+					
 					local m = Matrix()
-					m:setTranslation(obj.pos)
+					m:setTranslation(pos)
 					
 					render.pushMatrix(m)
-					local x, y = math.max((px or -9999), obj.x + (px or 0)), math.max((py or -9999), obj.y + (py or 0))
+					local x, y = math.max((px or -9999), pos.x + (px or 0)), math.max((py or -9999), pos.y + (py or 0))
 					local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
 					object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
 					render.enableScissorRect(x * sx, y * sy, x2 * sx, y2 * sy)
@@ -260,11 +266,13 @@ GUI = class {
 			
 			local function draw(object, px, py, px2, py2)
 				local obj = object.object
+				local pos = obj._pos
+				
 				local m = Matrix()
-				m:setTranslation(obj.pos)
+				m:setTranslation(pos)
 				
 				render.pushMatrix(m)
-				local x, y = math.max((px or -9999), obj.x + (px or 0)), math.max((py or -9999), obj.y + (py or 0))
+				local x, y = math.max((px or -9999), pos.x + (px or 0)), math.max((py or -9999), pos.y + (py or 0))
 				local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
 				object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
 				obj:_draw()

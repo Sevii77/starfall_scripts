@@ -8,6 +8,7 @@ return {
 	
 	data = {
 		_toggle = false,
+		_animation_speed = false,
 		
 		_hovering = false,
 		_click = false,
@@ -18,19 +19,21 @@ return {
 		------------------------------
 		
 		_think = function(self)
+			local anim_speed = self.animationSpeed
+			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * 20)
+					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * 20)
+				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._click or self._click_right then
 				if self._clickprogress < 1 then
-					self._clickprogress = math.min(1, self._clickprogress + timer.frametime() * 20)
+					self._clickprogress = math.min(1, self._clickprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 				
@@ -41,7 +44,7 @@ return {
 					self:onRightHold()
 				end
 			elseif self._clickprogress > 0 then
-				self._clickprogress = math.max(0, self._clickprogress - timer.frametime() * 20)
+				self._clickprogress = math.max(0, self._clickprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 		end,
@@ -101,11 +104,19 @@ return {
 			local b2 = b * 2
 			
 			if b > 0 then
-				render.setColor(self.secondaryColor)
-				render.drawRect(0, 0, w, h)
-				
-				render.setColor(self.accentColor)
-				render.drawRect(0, 0, w - b, h - b)
+				if self.borderAccentCorner then
+					render.setColor(self.accentColor)
+					render.drawRect(0, 0, w, h)
+					
+					render.setColor(self.secondaryColor)
+					render.drawRect(b, b, w - b, h - b)
+				else
+					render.setColor(self.secondaryColor)
+					render.drawRect(0, 0, w, h)
+					
+					render.setColor(self.accentColor)
+					render.drawRect(0, 0, w - b, h - b)
+				end
 			end
 			
 			render.setColor((self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress) * (1 - self._clickprogress) + self.accentColor * self._clickprogress)
@@ -138,6 +149,16 @@ return {
 			
 			get = function(self)
 				return self._toggle
+			end
+		},
+		
+		animationSpeed = {
+			set = function(self, value)
+				self._animation_speed = value
+			end,
+			
+			get = function(self)
+				return self._animation_speed or self._theme.animationSpeed
 			end
 		}
 	}

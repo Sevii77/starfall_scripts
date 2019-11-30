@@ -11,17 +11,26 @@ return {
 		_main_color = false,
 		_secondary_color = false,
 		_accent_color = false,
+		_border_accent_corner = nil,
 		
 		onDraw = function(self, w, h)
 			local b = self.borderSize
 			local b2 = b * 2
 			
 			if b > 0 then
-				render.setColor(self.secondaryColor)
-				render.drawRect(0, 0, w, h)
-				
-				render.setColor(self.accentColor)
-				render.drawRect(0, 0, w - b, h - b)
+				if self.borderAccentCorner then
+					render.setColor(self.accentColor)
+					render.drawRect(0, 0, w, h)
+					
+					render.setColor(self.secondaryColor)
+					render.drawRect(b, b, w - b, h - b)
+				else
+					render.setColor(self.secondaryColor)
+					render.drawRect(0, 0, w, h)
+					
+					render.setColor(self.accentColor)
+					render.drawRect(0, 0, w - b, h - b)
+				end
 			end
 			
 			render.setColor(self.mainColor)
@@ -77,6 +86,16 @@ return {
 			
 			get = function(self)
 				return self._accent_color or self._theme.accent
+			end
+		},
+		
+		borderAccentCorner = {
+			set = function(self, state)
+				self._border_accent_corner = state
+			end,
+			
+			get = function(self)
+				return self._border_accent_corner ~= nil and self._border_accent_corner or self._theme.borderAccentCorner
 			end
 		}
 	}

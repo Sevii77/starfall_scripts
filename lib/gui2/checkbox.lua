@@ -167,6 +167,7 @@ return {
 	
 	data = {
 		_state = false,
+		_animation_speed = false,
 		_style_index = 0,
 		
 		_text_height = 0,
@@ -185,23 +186,25 @@ return {
 		------------------------------
 		
 		_think = function(self, cx, cy)
+			local anim_speed = self.animationSpeed
+			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * 20)
+					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * 20)
+				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._state then
 				if self._stateprogress < 1 then
-					self._stateprogress = math.min(1, self._stateprogress + timer.frametime() * 20)
+					self._stateprogress = math.min(1, self._stateprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._stateprogress > 0 then
-				self._stateprogress = math.max(0, self._stateprogress - timer.frametime() * 20)
+				self._stateprogress = math.max(0, self._stateprogress - timer.frametime() * anim_speed)
 				self:_changed(true)
 			end
 		end,
@@ -255,6 +258,16 @@ return {
 			
 			get = function(self)
 				return self._font or self._theme.font
+			end
+		},
+		
+		animationSpeed = {
+			set = function(self, value)
+				self._animation_speed = value
+			end,
+			
+			get = function(self)
+				return self._animation_speed or self._theme.animationSpeed
 			end
 		},
 		

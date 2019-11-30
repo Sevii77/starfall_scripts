@@ -72,11 +72,7 @@ return {
 			render.setFont(self.font)
 			render.setColor(self.textColor)
 			
-			if self._text_wrap then
-				render.drawText(ax == 0 and d or (ax == 1 and w / 2 or w - d), (h - self._text_height) / 2, self.text, ax)
-			else
-				render.drawSimpleText(ax == 0 and d or (ax == 1 and w / 2 or w - d), ay == 3 and d or (ay == 1 and h / 2 or h - d), self.text, ax, ay)
-			end
+			render.drawText(ax == 0 and d or (ax == 1 and w / 2 or w - d), ay == 3 and d or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height - d), self.text, ax)
 		end
 	},
 	
