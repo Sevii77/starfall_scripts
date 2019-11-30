@@ -33,7 +33,7 @@ local styles = {
 					local last = self._progress
 					local progress = math.clamp((cx - self._h / 2) / (self._w - self._h), 0, 1)
 					self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
-					self._progress = (self.value - self.min) / (self._max + self._min)
+					self._progress = (self.value - self.min) / (self._max - self._min)
 					
 					if self._progress ~= last then
 						self:onChange(self._value)
@@ -131,7 +131,7 @@ local styles = {
 					local last = self._progress
 					local progress = math.clamp(cx / self._w, 0, 1)
 					self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
-					self._progress = (self.value - self.min) / (self._max + self._min)
+					self._progress = (self.value - self.min) / (self._max - self._min)
 					
 					if self._progress ~= last then
 						self:onChange(self._value)

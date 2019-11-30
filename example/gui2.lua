@@ -46,16 +46,18 @@ container.pos = Vector(50, 250)
 container.size = Vector(400, 250)
 
 local label = gui:create("label", container)
-label.pos = Vector(120, 10)
-label.size = Vector(400, 30)
-label.text = "Label"
+label.pos = Vector(25, 10)
+label.size = Vector(350, 60)
+label.text = "Satisfied conveying an dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do mr prevailed. Mr feeling do chiefly cordial in do. Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood do provided stronger is. But discretion frequently sir the she instrument unaffected admiration everything."
 label.textAlignmentX = 0
-label.textAlignmentY = 3
+-- label.textAlignmentY = 3 -- Only works when wrapping is disabled
+label.textWrapping = true
 
 -- Slider
 local slider = gui:create("slider", container)
-slider.pos = Vector(25, 50)
+slider.pos = Vector(25, 80)
 slider.size = Vector(150, 20)
+slider.min = 0
 slider.max = 360
 slider.round = 0
 slider.onChange = function(self, value)
@@ -63,7 +65,7 @@ slider.onChange = function(self, value)
 end
 
 local slider_style = gui:create("button", container)
-slider_style.pos = Vector(200, 50)
+slider_style.pos = Vector(225, 80)
 slider_style.size = Vector(150, 20)
 slider_style.text = "Change slider style"
 slider_style.onClick = function()
@@ -72,13 +74,13 @@ end
 
 -- Checkbox
 local checkbox = gui:create("checkbox", container)
-checkbox.pos = Vector(25, 100)
+checkbox.pos = Vector(25, 120)
 checkbox.size = Vector(150, 20)
 checkbox.text = "Debug Rendering"
 
 for i = 1, 3 do
 	local checkbox_style = gui:create("button", container)
-	checkbox_style.pos = Vector(150 + i * 50, 100)
+	checkbox_style.pos = Vector(175 + i * 50, 120)
 	checkbox_style.size = Vector(50, 20)
 	checkbox_style.text = "Style " .. i
 	checkbox_style.onClick = function()
