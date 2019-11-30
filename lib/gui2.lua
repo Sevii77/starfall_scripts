@@ -89,7 +89,7 @@ hook.add("inputReleased", "lib.gui", function(key)
 		for k, _ in pairs(gui._buttons.right) do
 			if key == k then
 				for _, obj in pairs(gui._clicking_objects.right) do
-					gui._focus_object.object:_releaseRight()
+					obj.object:_releaseRight()
 				end
 				
 				gui._clicking_objects.right = {}
@@ -291,7 +291,7 @@ GUI = class {
 			end
 		end,
 		
-		think = function(self)
+		think = function(self, cx, cy)
 			-- Remove objects
 			if table.count(self._remove_queue) > 0 then
 				for obj, _ in pairs(self._remove_queue) do
@@ -325,7 +325,10 @@ GUI = class {
 			end
 			
 			-- Think
-			local _, cx, cy = xpcall(render.cursorPos, input.getCursorPos)
+			if not cx then
+				local _, x, y = xpcall(render.cursorPos, input.getCursorPos)
+				cx, cy = x, y
+			end
 			
 			local function think(objects)
 				for obj, data in pairs(objects) do

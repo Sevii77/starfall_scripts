@@ -27,12 +27,18 @@ button.pos = Vector(50, 150)
 button.size = Vector(200, 50)
 button.text = "Double click on me"
 button.onDoubleClick = function(self)
-	button.text = "Good Job :D"
+	self.text = "Good Job :D"
 	
 	timer.simple(1, function()
-		button.text = "Double click on me"
+		self.text = "Double click on me"
 	end)
 end
+
+local button = gui:create("button")
+button.pos = Vector(300, 150)
+button.size = Vector(150, 50)
+button.text = "Toggle"
+button.toggle = true
 
 
 local container = gui:create("container")
@@ -50,6 +56,11 @@ label.textAlignmentY = 3
 local slider = gui:create("slider", container)
 slider.pos = Vector(25, 50)
 slider.size = Vector(150, 20)
+slider.max = 360
+slider.round = 0
+slider.onChange = function(self, value)
+	gui.theme.accent = Color(value, 0.5, 1):hsvToRGB()
+end
 
 local slider_style = gui:create("button", container)
 slider_style.pos = Vector(200, 50)
@@ -59,9 +70,29 @@ slider_style.onClick = function()
 	slider.style = slider.style == 1 and 2 or 1
 end
 
+-- Checkbox
+local checkbox = gui:create("checkbox", container)
+checkbox.pos = Vector(25, 100)
+checkbox.size = Vector(150, 20)
+checkbox.text = "Debug Rendering"
+
+for i = 1, 3 do
+	local checkbox_style = gui:create("button", container)
+	checkbox_style.pos = Vector(150 + i * 50, 100)
+	checkbox_style.size = Vector(50, 20)
+	checkbox_style.text = "Style " .. i
+	checkbox_style.onClick = function()
+		checkbox.style = i
+	end
+end
+
 hook.add("render", "", function()
 	gui:think()
 	gui:render()
+	
+	if checkbox.state then
+		gui:renderDebug()
+	end
 	
 	render.setRGBA(255, 255, 255, 255)
 	render.drawSimpleText(0, 0, tostring(math.round(quotaAverage() * 1000000)))

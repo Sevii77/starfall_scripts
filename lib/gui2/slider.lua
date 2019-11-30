@@ -4,6 +4,12 @@ for i = 1, 32 do
 	circle[i] = {x = -math.sin(rad) / 2, y = math.cos(rad) / 2}
 end
 
+local circle_half = {}
+for i = 0, 16 do
+	local rad = i / 16 * math.pi
+	circle_half[i + 1] = {x = -math.sin(rad) / 2, y = math.cos(rad) / 2}
+end
+
 local styles = {
 	{
 		think = function(self, cx, cy)
@@ -30,7 +36,7 @@ local styles = {
 					self._progress = (self.value - self.min) / (self._max + self._min)
 					
 					if self._progress ~= last then
-						self:onChange(self, self._value)
+						self:onChange(self._value)
 						self:_changed(true)
 					end
 				end
@@ -62,6 +68,28 @@ local styles = {
 			render.drawRect(x + b + (bw - b2) * self._progress, y + b, (bw - b2) * (1 - self._progress), bh - b2)
 			
 			-- Knob
+			-- local m = Matrix()
+			-- m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
+			-- m:setScale(Vector(h, h))
+			-- m:setAngles(Angle(0, 45, 0))
+			
+			-- render.pushMatrix(m, true)
+			-- render.setColor(self.accentColor)
+			-- render.drawPoly(circle_half)
+			-- render.popMatrix()
+			
+			-- m:rotate(Angle(0, 180, 0))
+			-- render.pushMatrix(m, true)
+			-- render.setColor(self.secondaryColor)
+			-- render.drawPoly(circle_half)
+			-- render.popMatrix()
+			
+			-- m:setScale(Vector(h - b2))
+			-- render.pushMatrix(m, true)
+			-- render.setColor((self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress) * (1 - self._holdprogress) + self.accentColor * self._holdprogress)
+			-- render.drawPoly(circle)
+			-- render.popMatrix()
+			
 			local m = Matrix()
 			m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
 			m:setScale(Vector(h, h))
@@ -71,10 +99,8 @@ local styles = {
 			render.drawPoly(circle)
 			render.popMatrix()
 			
-			local m = Matrix()
 			m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
 			m:setScale(Vector(h - b2, h - b2) * (1 - self._holdprogress))
-			
 			render.pushMatrix(m, true)
 			render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
 			render.drawPoly(circle)
@@ -108,7 +134,7 @@ local styles = {
 					self._progress = (self.value - self.min) / (self._max + self._min)
 					
 					if self._progress ~= last then
-						self:onChange(self, self._value)
+						self:onChange(self._value)
 						self:_changed(true)
 					end
 				end
@@ -131,7 +157,7 @@ local styles = {
 				render.drawRect(0, 0, w - b, h - b)
 			end
 			
-			render.setColor(self.mainColor)
+			render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
 			render.drawRect(b + (w - b2) * self._progress, b, (w - b2) * (1 - self._progress), h - b2)
 			
 			render.setFont(self.font)
@@ -151,6 +177,7 @@ return {
 	
 	data = {
 		_value = 0,
+		_bar_size = false,
 		_min = 0,
 		_max = 1,
 		_round = 2,
@@ -158,7 +185,6 @@ return {
 		
 		_holding = false,
 		_progress = 0,
-		_bar_size = false,
 		_hoverprogress = 0,
 		_holdprogress = 0,
 		
@@ -228,7 +254,7 @@ return {
 		
 		min = {
 			set = function(self, min)
-				self._min = min
+				self._min = min or 0
 				
 				self:_changed(true)
 			end,
@@ -240,13 +266,26 @@ return {
 		
 		max = {
 			set = function(self, max)
-				self._max = max
+				self._max = max or 1
 				
 				self:_changed(true)
 			end,
 			
 			get = function(self)
 				return self._max
+			end
+		},
+		
+		range = {
+			set = function(self, min, max)
+				self._min = min or 0
+				self._max = max or 1
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._min, self._max
 			end
 		},
 		
@@ -285,6 +324,12 @@ return {
 		------------------------------
 		
 		value = {
+			set = function(self, value)
+				self._value = value
+				
+				self:_changed(true)
+			end,
+			
 			get = function(self)
 				return self._value
 			end

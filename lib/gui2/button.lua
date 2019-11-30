@@ -7,6 +7,8 @@ return {
 	----------------------------------------
 	
 	data = {
+		_toggle = false,
+		
 		_hovering = false,
 		_click = false,
 		_click_right = false,
@@ -47,13 +49,13 @@ return {
 		_press = function(self)
 			self:onClick()
 			
-			self._click = true
+			self._click = not self._toggle and true or not self._click
 		end,
 		
 		_pressRight = function(self)
 			self:onRightClick()
 			
-			self._click_right = true
+			self._click_right = not self._toggle and true or not self._click_right
 		end,
 		
 		_pressDouble = function(self)
@@ -63,13 +65,17 @@ return {
 		_release = function(self)
 			self:onRelease()
 			
-			self._click = false
+			if not self._toggle then
+				self._click = false
+			end
 		end,
 		
 		_releaseRight = function(self)
 			self:onRightRelease()
 			
-			self._click_right = false
+			if not self._toggle then
+				self._click_right = false
+			end
 		end,
 		
 		_hover = function(self)
@@ -125,7 +131,15 @@ return {
 	----------------------------------------
 	
 	properties = {
-		
+		toggle = {
+			set = function(self, state)
+				self._toggle = state
+			end,
+			
+			get = function(self)
+				return self._toggle
+			end
+		}
 	}
 	
 }
