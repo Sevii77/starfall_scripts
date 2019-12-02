@@ -28,7 +28,7 @@ return {
 			self._text_height = 0
 			render.setFont(self.font)
 			
-			for spacer, word in string.gmatch(self._text_raw, "([%s%c]*)(%w+)") do
+			for spacer, word in string.gmatch(self._text_raw, "(%s*)(%S+)") do
 				if string.find(spacer, "\n") then
 					str = str .. line .. "\n"
 					line = word
@@ -71,7 +71,6 @@ return {
 			
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			
 			render.drawText(ax == 0 and d or (ax == 1 and w / 2 or w - d), ay == 3 and d or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height - d), self.text, ax)
 		end
 	},
@@ -121,7 +120,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._text_color or self._theme.text
+				return self._text_color or self._theme.textColor
 			end
 		},
 		

@@ -9,6 +9,9 @@ return {
 	data = {
 		_toggle = false,
 		_animation_speed = false,
+		_active_color = false,
+		_hover_color = false,
+		_active_hover_color = false,
 		
 		_hovering = false,
 		_click = false,
@@ -50,15 +53,15 @@ return {
 		end,
 		
 		_press = function(self)
-			self:onClick()
-			
 			self._click = not self._toggle and true or not self._click
+			
+			self:onClick()
 		end,
 		
 		_pressRight = function(self)
-			self:onRightClick()
-			
 			self._click_right = not self._toggle and true or not self._click_right
+			
+			self:onRightClick()
 		end,
 		
 		_pressDouble = function(self)
@@ -66,19 +69,19 @@ return {
 		end,
 		
 		_release = function(self)
-			self:onRelease()
-			
 			if not self._toggle then
 				self._click = false
 			end
+			
+			self:onRelease()
 		end,
 		
 		_releaseRight = function(self)
-			self:onRightRelease()
-			
 			if not self._toggle then
 				self._click_right = false
 			end
+			
+			self:onRightRelease()
 		end,
 		
 		_hover = function(self)
@@ -86,15 +89,15 @@ return {
 		end,
 		
 		_hoverStart = function(self)
-			self:onHoverBegin()
-			
 			self._hovering = true
+			
+			self:onHoverBegin()
 		end,
 		
 		_hoverEnd = function(self)
-			self:onHoverEnd()
-			
 			self._hovering = false
+			
+			self:onHoverEnd()
 		end,
 		
 		------------------------------
@@ -119,7 +122,10 @@ return {
 				end
 			end
 			
-			render.setColor((self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress) * (1 - self._clickprogress) + self.accentColor * self._clickprogress)
+			-- render.setColor((self.mainColor * (1 - self._hoverprogress) + self.hoverColor * self._hoverprogress) * (1 - self._clickprogress) + self.activeColor * self._clickprogress)
+			local hp = self._hoverprogress
+			local hp1 = 1 - self._hoverprogress
+			render.setColor((self.mainColor * hp1 + self.hoverColor * hp) * (1 - self._clickprogress) + (self.activeColor * hp1 + self.activeHoverColor * hp) * self._clickprogress)
 			render.drawRect(b, b, w - b2, h - b2)
 			
 			render.setFont(self.font)
@@ -159,6 +165,50 @@ return {
 			
 			get = function(self)
 				return self._animation_speed or self._theme.animationSpeed
+			end
+		},
+		
+		activeColor = {
+			set = function(self, color)
+				self._active_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._active_color or self._theme.activeColor
+			end
+		},
+		
+		hoverColor = {
+			set = function(self, color)
+				self._hover_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._hover_color or self._theme.hoverColor
+			end
+		},
+		
+		activeHoverColor = {
+			set = function(self, color)
+				self._active_hover_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._active_hover_color or self._theme.activeHoverColor
+			end
+		},
+		
+		------------------------------
+		
+		state = {
+			get = function(self)
+				return self._click
 			end
 		}
 	}

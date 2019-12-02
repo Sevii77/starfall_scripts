@@ -36,6 +36,26 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
+		if self._full_border then
+			local h2 = h / 2
+			if self.borderAccentCorner then
+				render.setColor(self.accentColor)
+				render.drawRect(h2, 0, w - h2, h)
+				
+				render.setColor(self.secondaryColor)
+				render.drawRect(h2 + b, b, w - b - h2, h - b)
+			else
+				render.setColor(self.secondaryColor)
+				render.drawRect(h2, 0, w - h2, h)
+				
+				render.setColor(self.accentColor)
+				render.drawRect(h2, 0, w - b - h2, h - b)
+			end
+			
+			render.setColor(self.mainColor)
+			render.drawRect(h2, b, w - b - h2, h - b2)
+		end
+		
 		-- Pill
 		local m = Matrix()
 		
@@ -68,11 +88,23 @@ local styles = {
 		render.drawPoly(circle)
 		render.popMatrix()
 		
-		m:setScale(Vector(h - b2, h - b2) * (1 - self._stateprogress))
-		render.pushMatrix(m, true)
-		render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
-		render.drawPoly(circle)
-		render.popMatrix()
+		local hp = self._hoverprogress
+		local hp1 = 1 - self._hoverprogress
+		if self._stateprogress > 0 then
+			m:setScale(Vector(h - b2, h - b2))
+			render.pushMatrix(m, true)
+			render.setColor(self.activeColor * hp1 + self.activeHoverColor * hp)
+			render.drawPoly(circle)
+			render.popMatrix()
+		end
+		
+		if self._stateprogress < 1 then
+			m:setScale(Vector(h - b2, h - b2) * (1 - self._stateprogress))
+			render.pushMatrix(m, true)
+			render.setColor(self.mainColor * hp1 + self.hoverColor * hp)
+			render.drawPoly(circle)
+			render.popMatrix()
+		end
 		
 		-- Text
 		render.setFont(self.font)
@@ -85,27 +117,28 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
+		if self._full_border then
+			local h2 = h / 2
+			if self.borderAccentCorner then
+				render.setColor(self.accentColor)
+				render.drawRect(h2, 0, w - h2, h)
+				
+				render.setColor(self.secondaryColor)
+				render.drawRect(h2 + b, b, w - b - h2, h - b)
+			else
+				render.setColor(self.secondaryColor)
+				render.drawRect(h2, 0, w - h2, h)
+				
+				render.setColor(self.accentColor)
+				render.drawRect(h2, 0, w - b - h2, h - b)
+			end
+			
+			render.setColor(self.mainColor)
+			render.drawRect(h2, b, w - b - h2, h - b2)
+		end
+		
 		local m = Matrix()
 		m:setTranslation(Vector(h / 2))
-		
-		-- m:setScale(Vector(h))
-		-- m:setAngles(Angle(0, 45, 0))
-		-- render.pushMatrix(m, true)
-		-- render.setColor(self.accentColor)
-		-- render.drawPoly(circle_half)
-		-- render.popMatrix()
-		
-		-- m:rotate(Angle(0, 180, 0))
-		-- render.pushMatrix(m, true)
-		-- render.setColor(self.secondaryColor)
-		-- render.drawPoly(circle_half)
-		-- render.popMatrix()
-		
-		-- m:setScale(Vector(h - self.borderSize * 2))
-		-- render.pushMatrix(m, true)
-		-- render.setColor((self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress) * (1 - self._stateprogress) + self.accentColor * self._stateprogress)
-		-- render.drawPoly(circle)
-		-- render.popMatrix()
 		
 		m:setScale(Vector(h))
 		render.pushMatrix(m, true)
@@ -113,11 +146,23 @@ local styles = {
 		render.drawPoly(circle)
 		render.popMatrix()
 		
-		m:setScale(Vector(h - b2, h - b2) * (1 - self._stateprogress))
-		render.pushMatrix(m, true)
-		render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
-		render.drawPoly(circle)
-		render.popMatrix()
+		local hp = self._hoverprogress
+		local hp1 = 1 - self._hoverprogress
+		if self._stateprogress > 0 then
+			m:setScale(Vector(h - b2, h - b2))
+			render.pushMatrix(m, true)
+			render.setColor(self.activeColor * hp1 + self.activeHoverColor * hp)
+			render.drawPoly(circle)
+			render.popMatrix()
+		end
+		
+		if self._stateprogress < 1 then
+			m:setScale(Vector(h - b2, h - b2) * (1 - self._stateprogress))
+			render.pushMatrix(m, true)
+			render.setColor(self.mainColor * hp1 + self.hoverColor * hp)
+			render.drawPoly(circle)
+			render.popMatrix()
+		end
 		
 		render.setFont(self.font)
 		render.setColor(self.textColor)
@@ -129,23 +174,54 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
-		if b > 0 then
-			render.setColor(self.secondaryColor)
-			render.drawRect(0, 0, h, h)
+		if self._full_border then
+			local h2 = h / 2
+			if self.borderAccentCorner then
+				render.setColor(self.accentColor)
+				render.drawRect(h2, 0, w - h2, h)
+				
+				render.setColor(self.secondaryColor)
+				render.drawRect(h2 + b, b, w - b - h2, h - b)
+			else
+				render.setColor(self.secondaryColor)
+				render.drawRect(h2, 0, w - h2, h)
+				
+				render.setColor(self.accentColor)
+				render.drawRect(h2, 0, w - b - h2, h - b)
+			end
 			
-			render.setColor(self.accentColor)
-			render.drawRect(0, 0, h - b, h - b)
+			render.setColor(self.mainColor)
+			render.drawRect(h2, b, w - b - h2, h - b2)
 		end
 		
+		if b > 0 then
+			if self.borderAccentCorner then
+				render.setColor(self.accentColor)
+				render.drawRect(0, 0, h, h)
+				
+				render.setColor(self.secondaryColor)
+				render.drawRect(b, b, h - b, h - b)
+			else
+				render.setColor(self.secondaryColor)
+				render.drawRect(0, 0, h, h)
+				
+				render.setColor(self.accentColor)
+				render.drawRect(0, 0, h - b, h - b)
+			end
+		end
+		
+		local hp = self._hoverprogress
+		local hp1 = 1 - self._hoverprogress
+		
 		if self._stateprogress < 1 then
-			render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
+			render.setColor(self.mainColor * hp1 + self.hoverColor * hp)
 			render.drawRect(b, b, h - b2, h - b2)
 		end
 		if self._stateprogress > 0 then
 			local s = (h - b2) * self._stateprogress
 			local o = ((h - b2) - s) / 2
 			
-			render.setColor(self.accentColor)
+			render.setColor(self.activeColor * hp1 + self.activeHoverColor * hp)
 			render.drawRect(b + o, b + o, s, s)
 		end
 		
@@ -168,6 +244,10 @@ return {
 	data = {
 		_state = false,
 		_animation_speed = false,
+		_full_border = false,
+		_active_color = false,
+		_hover_color = false,
+		_active_hover_color = false,
 		_style_index = 0,
 		
 		_text_height = 0,
@@ -268,6 +348,54 @@ return {
 			
 			get = function(self)
 				return self._animation_speed or self._theme.animationSpeed
+			end
+		},
+		
+		fullBorders = {
+			set = function(self, state)
+				self._full_border = state
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._full_border
+			end
+		},
+		
+		activeColor = {
+			set = function(self, color)
+				self._active_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._active_color or self._theme.activeColor
+			end
+		},
+		
+		hoverColor = {
+			set = function(self, color)
+				self._hover_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._hover_color or self._theme.hoverColor
+			end
+		},
+		
+		activeHoverColor = {
+			set = function(self, color)
+				self._active_hover_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._active_hover_color or self._theme.activeHoverColor
 			end
 		},
 		

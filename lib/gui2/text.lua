@@ -13,8 +13,6 @@ return {
 		_text_alignment_x = 1,
 		_text_alignment_y = 1,
 		
-		--_text_size = {w = 0, h = 0},
-		
 		------------------------------
 		
 		_textChanged = function(self)
@@ -32,6 +30,8 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
+			render.setFont(self.font)
+			render.setColor(self.textColor)
 			render.drawText(0, 0, self.text)
 		end
 	},
@@ -137,7 +137,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._text_color or self._theme.text
+				return self._text_color or self._theme.textColor
 			end
 		},
 		

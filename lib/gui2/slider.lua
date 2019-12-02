@@ -57,41 +57,32 @@ local styles = {
 			local bw = w - x * 2
 			local b = self.borderSize
 			local b2 = b * 2
+			local bb = self.barBorderSize
+			local bb2 = bb * 2
 			
 			if b > 0 then
-				render.setColor(self.secondaryColor)
-				render.drawRect(x, y, bw, bh)
-				
-				render.setColor(self.accentColor)
-				render.drawRect(x, y, bw - b, bh - b)
+				if self.borderAccentCorner then
+					render.setColor(self.accentColor)
+					render.drawRect(x, y, bw, bh)
+					
+					render.setColor(self.secondaryColor)
+					render.drawRect(x + bb, y + bb, bw - bb, bh - bb)
+				else
+					render.setColor(self.secondaryColor)
+					render.drawRect(x, y, bw, bh)
+					
+					render.setColor(self.accentColor)
+					render.drawRect(x, y, bw - bb, bh - bb)
+				end
 			end
 			
+			render.setColor(self.activeColor)
+			render.drawRect(x + bb, y + bb, bw - bb2, bh - bb2)
+			
 			render.setColor(self.mainColor)
-			render.drawRect(x + b + (bw - b2) * self._progress, y + b, (bw - b2) * (1 - self._progress), bh - b2)
+			render.drawRect(x + bb + (bw - bb2) * self._progress, y + bb, (bw - bb2) * (1 - self._progress), bh - bb2)
 			
 			-- Knob
-			-- local m = Matrix()
-			-- m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
-			-- m:setScale(Vector(h, h))
-			-- m:setAngles(Angle(0, 45, 0))
-			
-			-- render.pushMatrix(m, true)
-			-- render.setColor(self.accentColor)
-			-- render.drawPoly(circle_half)
-			-- render.popMatrix()
-			
-			-- m:rotate(Angle(0, 180, 0))
-			-- render.pushMatrix(m, true)
-			-- render.setColor(self.secondaryColor)
-			-- render.drawPoly(circle_half)
-			-- render.popMatrix()
-			
-			-- m:setScale(Vector(h - b2))
-			-- render.pushMatrix(m, true)
-			-- render.setColor((self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress) * (1 - self._holdprogress) + self.accentColor * self._holdprogress)
-			-- render.drawPoly(circle)
-			-- render.popMatrix()
-			
 			local m = Matrix()
 			m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
 			m:setScale(Vector(h, h))
@@ -101,12 +92,32 @@ local styles = {
 			render.drawPoly(circle)
 			render.popMatrix()
 			
+			-- m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
+			-- m:setScale(Vector(h - b2, h - b2) * (1 - self._holdprogress))
+			-- render.pushMatrix(m, true)
+			-- render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
+			-- render.drawPoly(circle)
+			-- render.popMatrix()
+			
 			m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
-			m:setScale(Vector(h - b2, h - b2) * (1 - self._holdprogress))
-			render.pushMatrix(m, true)
-			render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
-			render.drawPoly(circle)
-			render.popMatrix()
+			
+			local hp = self._hoverprogress
+			local hp1 = 1 - self._hoverprogress
+			if self._holdprogress > 0 then
+				m:setScale(Vector(h - b2, h - b2))
+				render.pushMatrix(m, true)
+				render.setColor(self.activeColor * hp1 + self.activeHoverColor * hp)
+				render.drawPoly(circle)
+				render.popMatrix()
+			end
+			
+			if self._holdprogress < 1 then
+				m:setScale(Vector(h - b2, h - b2) * (1 - self._holdprogress))
+				render.pushMatrix(m, true)
+				render.setColor(self.mainColor * hp1 + self.hoverColor * hp)
+				render.drawPoly(circle)
+				render.popMatrix()
+			end
 		end,
 	},
 	
@@ -154,14 +165,28 @@ local styles = {
 			local b2 = b * 2
 			
 			if b > 0 then
-				render.setColor(self.secondaryColor)
-				render.drawRect(0, 0, w, h)
-				
-				render.setColor(self.accentColor)
-				render.drawRect(0, 0, w - b, h - b)
+				if self.borderAccentCorner then
+					render.setColor(self.accentColor)
+					render.drawRect(0, 0, w, h)
+					
+					render.setColor(self.secondaryColor)
+					render.drawRect(b, b, w - b, h - b)
+				else
+					render.setColor(self.secondaryColor)
+					render.drawRect(0, 0, w, h)
+					
+					render.setColor(self.accentColor)
+					render.drawRect(0, 0, w - b, h - b)
+				end
 			end
 			
-			render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
+			local hp = self._hoverprogress
+			local hp1 = 1 - self._hoverprogress
+			
+			render.setColor(self.activeColor * hp1 + self.activeHoverColor * hp)
+			render.drawRect(b, b, w - b2, h - b2)
+			
+			render.setColor(self.mainColor * hp1 + self.hoverColor * hp)
 			render.drawRect(b + (w - b2) * self._progress, b, (w - b2) * (1 - self._progress), h - b2)
 			
 			render.setFont(self.font)
@@ -182,7 +207,11 @@ return {
 	data = {
 		_value = 0,
 		_bar_size = false,
+		_bar_border_size = false,
 		_animation_speed = false,
+		_active_color = false,
+		_hover_color = false,
+		_active_hover_color = false,
 		_min = 0,
 		_max = 1,
 		_round = 2,
@@ -246,14 +275,26 @@ return {
 	
 	properties = {
 		barSize = {
-			set = function(self, barSize)
-				self._bar_size = barSize
+			set = function(self, value)
+				self._bar_size = value
 				
 				self:_changed(true)
 			end,
 			
 			get = function(self)
 				return self._bar_size or self._theme.barSize
+			end
+		},
+		
+		barBorderSize = {
+			set = function(self, value)
+				self._bar_border_size = value
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._bar_border_size or self._theme.barBorderSize
 			end
 		},
 		
@@ -264,6 +305,42 @@ return {
 			
 			get = function(self)
 				return self._animation_speed or self._theme.animationSpeed
+			end
+		},
+		
+		activeColor = {
+			set = function(self, color)
+				self._active_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._active_color or self._theme.activeColor
+			end
+		},
+		
+		hoverColor = {
+			set = function(self, color)
+				self._hover_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._hover_color or self._theme.hoverColor
+			end
+		},
+		
+		activeHoverColor = {
+			set = function(self, color)
+				self._active_hover_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._active_hover_color or self._theme.activeHoverColor
 			end
 		},
 		

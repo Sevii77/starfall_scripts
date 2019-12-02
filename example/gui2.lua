@@ -8,6 +8,7 @@ local gui = GUI()
 
 local text_block = "Satisfied conveying an dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do mr prevailed. Mr feeling do chiefly cordial in do. Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood do provided stronger is. But discretion frequently sir the she instrument unaffected admiration everything."
 
+-- Default themes
 local lighttheme = gui:create("button")
 lighttheme.pos = Vector(50, 50)
 lighttheme.size = Vector(100, 50)
@@ -24,6 +25,28 @@ darktheme.onClick = function(self)
 	gui.theme = "dark"
 end
 
+local customtheme = gui:create("button")
+customtheme.pos = Vector(250, 50)
+customtheme.size = Vector(100, 50)
+customtheme.text = "Art Theme"
+customtheme.onClick = function(self)
+	local function randclr()
+		return Color(math.random(0, 256), math.random(0, 256), math.random(0, 256))
+	end
+	
+	-- We only set the theme to a table of colors, since it will keep old values if new ones are not supplied
+	gui.theme = {
+		mainColor = randclr(),
+		secondaryColor = randclr(),
+		accentColor = randclr(),
+		activeColor = randclr(),
+		hoverColor = randclr(),
+		activeHoverColor = randclr(),
+		textColor = randclr()
+	}
+end
+
+-- Button with double click callback
 local button = gui:create("button")
 button.pos = Vector(50, 150)
 button.size = Vector(200, 50)
@@ -36,6 +59,7 @@ button.onDoubleClick = function(self)
 	end)
 end
 
+-- Button that is toggable
 local button = gui:create("button")
 button.pos = Vector(300, 150)
 button.size = Vector(150, 50)
@@ -43,16 +67,18 @@ button.text = "Toggle"
 button.toggle = true
 
 
+-- Container
 local container = gui:create("container")
 container.pos = Vector(50, 250)
 container.size = Vector(400, 250)
 
+-- Label with text wrapping
 local label = gui:create("label", container)
 label.pos = Vector(25, 10)
 label.size = Vector(350, 60)
 label.text = text_block
 label.textAlignmentX = 0
--- label.textAlignmentY = 3 -- Only works when wrapping is disabled
+label.textAlignmentY = 4
 label.textWrapping = true
 
 -- Slider
@@ -63,7 +89,11 @@ slider.min = 0
 slider.max = 360
 slider.round = 0
 slider.onChange = function(self, value)
-	gui.theme.accent = Color(value, 0.5, 1):hsvToRGB()
+	local clr = Color(value, 0.5, 1):hsvToRGB()
+	
+	gui.theme.accentColor = clr
+	gui.theme.activeColor = clr
+	gui.theme.activeHoverColor = clr * 0.8
 end
 
 local slider_style = gui:create("button", container)
@@ -90,6 +120,15 @@ for i = 1, 3 do
 	end
 end
 
+local checkbox_fb = gui:create("button", container)
+checkbox_fb.pos = Vector(225, 140)
+checkbox_fb.size = Vector(150, 20)
+checkbox_fb.text = "Full Borders"
+checkbox_fb.toggle = true
+checkbox_fb.onClick = function(self)
+	checkbox.fullBorders = self.state
+end
+
 -- Text
 local s = ""
 for k, v in pairs(string.split(text_block, " ")) do
@@ -97,10 +136,11 @@ for k, v in pairs(string.split(text_block, " ")) do
 end
 
 local text = gui:create("text", container)
-text.pos = Vector(200, 150)
+text.pos = Vector(200, 170)
 text.text = s
 text.textAlignmentY = 3
 
+-- Rendering of gui
 hook.add("render", "", function()
 	gui:think()
 	gui:render()

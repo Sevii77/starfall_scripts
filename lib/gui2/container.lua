@@ -61,7 +61,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._main_color or self._theme.main
+				return self._main_color or self._theme.mainColor
 			end
 		},
 		
@@ -73,7 +73,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._secondary_color or self._theme.secondary
+				return self._secondary_color or self._theme.secondaryColor
 			end
 		},
 		
@@ -85,7 +85,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._accent_color or self._theme.accent
+				return self._accent_color or self._theme.accentColor
 			end
 		},
 		

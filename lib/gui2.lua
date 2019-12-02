@@ -17,28 +17,36 @@ local class, checktype = unpack(require("./class.lua"))
 
 local themes = {
 	light = {
-		main = Color(220, 220, 220),
-		secondary = Color(180, 180, 180),
-		accent = Color(50, 255, 180),
-		text = Color(30, 30, 30),
+		mainColor = Color(220, 220, 220),
+		secondaryColor = Color(180, 180, 180),
+		accentColor = Color(50, 255, 180),
+		activeColor = Color(50, 255, 180),
+		hoverColor = Color(180, 180, 180),
+		activeHoverColor = Color(50, 255, 180) * 0.8,
+		textColor = Color(30, 30, 30),
 		
 		borderSize = 1,
 		borderAccentCorner = true,
 		barSize = 4,
+		barBorderSize = 1,
 		animationSpeed = 20,
 		
 		font = render.createFont("Roboto", 18, 600)
 	},
 	
 	dark = {
-		main = Color(50, 50, 50),
-		secondary = Color(90, 90, 90),
-		accent = Color(50, 255, 180),
-		text = Color(255, 255, 255),
+		mainColor = Color(50, 50, 50),
+		secondaryColor = Color(90, 90, 90),
+		accentColor = Color(50, 255, 180),
+		activeColor = Color(50, 255, 180),
+		hoverColor = Color(90, 90, 90),
+		activeHoverColor = Color(50, 255, 180) * 0.8,
+		textColor = Color(255, 255, 255),
 		
 		borderSize = 1,
 		borderAccentCorner = true,
 		barSize = 4,
+		barBorderSize = 1,
 		animationSpeed = 20,
 		
 		font = render.createFont("Roboto", 18, 600)
