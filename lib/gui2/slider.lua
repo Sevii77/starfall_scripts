@@ -59,7 +59,7 @@ local styles = {
 			local bb = self.barBorderSize
 			local bb2 = bb * 2
 			
-			render.setTexture()
+			render.setMaterial()
 			
 			if b > 0 then
 				if self.borderAccentCorner then

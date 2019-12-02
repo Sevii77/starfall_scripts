@@ -36,7 +36,7 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
-		render.setTexture()
+		render.setMaterial()
 		
 		-- Full borders
 		if self._full_border then
@@ -120,7 +120,7 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
-		render.setTexture()
+		render.setMaterial()
 		
 		-- Full borders
 		if self._full_border then
