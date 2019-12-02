@@ -36,6 +36,9 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
+		render.setTexture()
+		
+		-- Full borders
 		if self._full_border then
 			local h2 = h / 2
 			if self.borderAccentCorner then
@@ -117,6 +120,9 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
+		render.setTexture()
+		
+		-- Full borders
 		if self._full_border then
 			local h2 = h / 2
 			if self.borderAccentCorner then
@@ -137,6 +143,7 @@ local styles = {
 			render.drawRect(h2, b, w - b - h2, h - b2)
 		end
 		
+		-- Check circle
 		local m = Matrix()
 		m:setTranslation(Vector(h / 2))
 		
@@ -174,6 +181,7 @@ local styles = {
 		local b = self.borderSize
 		local b2 = b * 2
 		
+		-- Full borders
 		if self._full_border then
 			local h2 = h / 2
 			if self.borderAccentCorner then
@@ -194,6 +202,7 @@ local styles = {
 			render.drawRect(h2, b, w - b - h2, h - b2)
 		end
 		
+		-- Checkbox
 		if b > 0 then
 			if self.borderAccentCorner then
 				render.setColor(self.accentColor)

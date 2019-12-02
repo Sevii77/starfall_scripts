@@ -50,7 +50,6 @@ local styles = {
 			end
 		end,
 		draw = function(self, w, h)
-			-- Bar
 			local bh = self.barSize
 			local x = h / 2 - bh / 2
 			local y = x
@@ -59,6 +58,8 @@ local styles = {
 			local b2 = b * 2
 			local bb = self.barBorderSize
 			local bb2 = bb * 2
+			
+			render.setTexture()
 			
 			if b > 0 then
 				if self.borderAccentCorner then
@@ -76,6 +77,7 @@ local styles = {
 				end
 			end
 			
+			-- Bar
 			render.setColor(self.activeColor)
 			render.drawRect(x + bb, y + bb, bw - bb2, bh - bb2)
 			

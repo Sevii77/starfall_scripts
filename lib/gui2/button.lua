@@ -128,9 +128,10 @@ return {
 			render.setColor((self.mainColor * hp1 + self.hoverColor * hp) * (1 - self._clickprogress) + (self.activeColor * hp1 + self.activeHoverColor * hp) * self._clickprogress)
 			render.drawRect(b, b, w - b2, h - b2)
 			
+			local ax, ay = self._text_alignment_x, self._text_alignment_y
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			render.drawSimpleText(w / 2, h / 2, self.text, 1, 1)
+			render.drawText(ax == 0 and b or (ax == 1 and w / 2 or w - b), ay == 3 and b or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height - b), self.text, ax)
 		end,
 		
 		onClick = function(self) end,
