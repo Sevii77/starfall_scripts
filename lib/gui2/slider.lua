@@ -199,7 +199,7 @@ local styles = {
 }
 
 return {
-	inherit = "label",
+	inherit = "container",
 	constructor = function(self)
 		self.style = 1
 	end,
@@ -208,6 +208,8 @@ return {
 	
 	data = {
 		_value = 0,
+		_font = false,
+		_text_color = false,
 		_bar_size = false,
 		_bar_border_size = false,
 		_animation_speed = false,
@@ -249,12 +251,14 @@ return {
 		_hoverStart = function(self)
 			self:onHoverBegin()
 			
+			self:_cursorMode(GUI.CURSORMODE.CLICKABLE, GUI.CURSORMODE.NORMAL)
 			self._hovering = true
 		end,
 		
 		_hoverEnd = function(self)
 			self:onHoverEnd()
 			
+			self:_cursorMode(GUI.CURSORMODE.NORMAL, GUI.CURSORMODE.CLICKABLE)
 			self._hovering = false
 		end,
 		
@@ -276,6 +280,36 @@ return {
 	----------------------------------------
 	
 	properties = {
+		font = {
+			set = function(self, font)
+				self._font = font
+				
+				self:_changed(true)
+				
+				if self._text_wrap then
+					self:_wrapText()
+				else
+					self:_setTextHeight()
+				end
+			end,
+			
+			get = function(self)
+				return self._font or self._theme.font
+			end
+		},
+		
+		textColor = {
+			set = function(self, color)
+				self._text_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._text_color or self._theme.textColor
+			end
+		},
+		
 		barSize = {
 			set = function(self, value)
 				self._bar_size = value

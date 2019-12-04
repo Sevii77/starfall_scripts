@@ -50,7 +50,7 @@ return {
 		
 		------------------------------
 		
-		local object = data.data or {}
+		local object = data.data and table.copy(data.data) or {}
 		
 		if data.properties then
 			local properties = data.properties
@@ -104,6 +104,12 @@ return {
 		
 		class.__call = function(_, ...)
 			local obj = setmetatable({}, object)
+			
+			for k, v in pairs(data.data) do
+				if type(v) == "table" then
+					rawset(obj, k, table.copy(v))
+				end
+			end
 			
 			constructor(obj, ...)
 			

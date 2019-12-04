@@ -34,7 +34,7 @@ return {
 				self:_changed(true)
 			end
 			
-			if self._click or self._click_right then
+			if self._click or (not self._toggle and self._click_right) then
 				if self._clickprogress < 1 then
 					self._clickprogress = math.min(1, self._clickprogress + timer.frametime() * anim_speed)
 					self:_changed(true)
@@ -59,7 +59,7 @@ return {
 		end,
 		
 		_pressRight = function(self)
-			self._click_right = not self._toggle and true or not self._click_right
+			self._click_right = true
 			
 			self:onRightClick()
 		end,
@@ -77,9 +77,7 @@ return {
 		end,
 		
 		_releaseRight = function(self)
-			if not self._toggle then
-				self._click_right = false
-			end
+			self._click_right = false
 			
 			self:onRightRelease()
 		end,
@@ -91,12 +89,14 @@ return {
 		_hoverStart = function(self)
 			self._hovering = true
 			
+			self:_cursorMode(GUI.CURSORMODE.CLICKABLE, GUI.CURSORMODE.NORMAL)
 			self:onHoverBegin()
 		end,
 		
 		_hoverEnd = function(self)
 			self._hovering = false
 			
+			self:_cursorMode(GUI.CURSORMODE.NORMAL, GUI.CURSORMODE.CLICKABLE)
 			self:onHoverEnd()
 		end,
 		

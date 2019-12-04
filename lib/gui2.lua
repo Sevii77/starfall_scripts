@@ -1,6 +1,6 @@
 --@includedir ./gui2
 --@include ./class.lua
---@client
+--include ./stencil.lua
 
 --[[
 	TODO:
@@ -12,8 +12,171 @@
 ]]
 
 local class, checktype = unpack(require("./class.lua"))
+-- local stencil = require("./stencil.lua")
 
 ----------------------------------------
+
+local cursor_poly_cache = {
+	-- DRAGGING
+	rect_45_o = {
+		{x = -16, y = 0},
+		{x = 0, y = -16},
+		{x = 16, y = 0},
+		{x = 0, y = 16}
+	}, rect_45_i = {
+		{x = -14, y = 0},
+		{x = 0, y = -14},
+		{x = 14, y = 0},
+		{x = 0, y = 14}
+	},
+	
+	rect_s_o = {
+		{x = -8, y = -8},
+		{x = 8, y = -8},
+		{x = 8, y = 8},
+		{x = -8, y = 8}
+	}, rect_s_i = {
+		{x = -6, y = -6},
+		{x = 6, y = -6},
+		{x = 6, y = 6},
+		{x = -6, y = 6}
+	},
+	
+	-- RESIZE
+	arrow_l_o = {
+		{x = -16, y = 0},
+		{x = -8, y = -8},
+		{x = -8, y = 8}
+	}, arrow_l_i = {
+		{x = -14, y = 0},
+		{x = -9.5, y = -4.5},
+		{x = -9.5, y = 4.5}
+	},
+	
+	arrow_r_o = {
+		{x = 16, y = 0},
+		{x = 8, y = 8},
+		{x = 8, y = -8}
+	}, arrow_r_i = {
+		{x = 14, y = 0},
+		{x = 9.5, y = 4.5},
+		{x = 9.5, y = -4.5}
+	},
+	
+	arrow_u_o = {
+		{x = 0, y = -16},
+		{x = 8, y = -8},
+		{x = -8, y = -8}
+	}, arrow_u_i = {
+		{x = 0, y = -14},
+		{x = 4.5, y = -9.5},
+		{x = -4.5, y = -9.5}
+	},
+	
+	arrow_d_o = {
+		{x = 0, y = 16},
+		{x = -8, y = 8},
+		{x = 8, y = 8}
+	}, arrow_d_i = {
+		{x = 0, y = 14},
+		{x = -4.5, y = 9.5},
+		{x = 4.5, y = 9.5}
+	}
+}
+
+local cursor = { --[[32x32]]
+	-- NORMAL
+	[0] = function(mainColor, outlineColor)
+		render.setColor(mainColor)
+		render.drawRect(0, 0, 32, 32)
+		render.setColor(outlineColor)
+		render.drawSimpleText(0, 0, "0")
+	end,
+	
+	-- CLICKABLE
+	[1] = function(mainColor, outlineColor)
+		render.setColor(mainColor)
+		render.drawRect(0, 0, 32, 32)
+		render.setColor(outlineColor)
+		render.drawSimpleText(0, 0, "1")
+	end,
+	
+	-- LOADING
+	[2] = function(mainColor, outlineColor)
+		render.setColor(mainColor)
+		render.drawRect(0, 0, 32, 32)
+		render.setColor(outlineColor)
+		render.drawSimpleText(0, 0, "2")
+	end,
+	
+	-- DRAGGING
+	[3] = function(mainColor, outlineColor)
+		render.setColor(outlineColor)
+		render.drawPoly(cursor_poly_cache.rect_45_o)
+		
+		render.setColor(mainColor)
+		render.drawPoly(cursor_poly_cache.rect_45_i)
+		
+		render.setColor(outlineColor)
+		render.drawPoly(cursor_poly_cache.rect_s_o)
+		
+		render.setColor(mainColor)
+		render.drawPoly(cursor_poly_cache.rect_s_i)
+	end,
+	
+	-- RESIZE
+	[4] = function(mainColor, outlineColor)
+		render.setColor(outlineColor)
+		render.drawRect(-8, -2, 16, 4)
+		render.drawRect(-2, -8, 4, 16)
+		render.drawPoly(cursor_poly_cache.arrow_l_o)
+		render.drawPoly(cursor_poly_cache.arrow_r_o)
+		render.drawPoly(cursor_poly_cache.arrow_u_o)
+		render.drawPoly(cursor_poly_cache.arrow_d_o)
+		
+		render.setColor(mainColor)
+		render.drawRect(-9.5, -1, 19, 2)
+		render.drawRect(-1, -9.5, 2, 19)
+		render.drawPoly(cursor_poly_cache.arrow_l_i)
+		render.drawPoly(cursor_poly_cache.arrow_r_i)
+		render.drawPoly(cursor_poly_cache.arrow_u_i)
+		render.drawPoly(cursor_poly_cache.arrow_d_i)
+	end,
+	
+	-- RESIZEX
+	[5] = function(mainColor, outlineColor)
+		render.setColor(outlineColor)
+		render.drawRect(-8, -2, 16, 4)
+		render.drawPoly(cursor_poly_cache.arrow_l_o)
+		render.drawPoly(cursor_poly_cache.arrow_r_o)
+		
+		render.setColor(mainColor)
+		render.drawRect(-9.5, -1, 19, 2)
+		render.drawPoly(cursor_poly_cache.arrow_l_i)
+		render.drawPoly(cursor_poly_cache.arrow_r_i)
+	end,
+	
+	-- RESIZEY
+	[6] = function(mainColor, outlineColor)
+		render.setColor(outlineColor)
+		render.drawRect(-2, -8, 4, 16)
+		render.drawPoly(cursor_poly_cache.arrow_u_o)
+		render.drawPoly(cursor_poly_cache.arrow_d_o)
+		
+		render.setColor(mainColor)
+		render.drawRect(-1, -9.5, 2, 19)
+		render.drawPoly(cursor_poly_cache.arrow_u_i)
+		render.drawPoly(cursor_poly_cache.arrow_d_i)
+	end,
+	
+	-- WRITEABLE
+	[7] = function(mainColor, outlineColor)
+		render.setColor(mainColor)
+		render.drawRect(0, 0, 32, 32)
+		render.setColor(outlineColor)
+		render.drawSimpleText(0, 0, "7")
+	end
+}
 
 local themes = {
 	light = {
@@ -31,7 +194,12 @@ local themes = {
 		barBorderSize = 1,
 		animationSpeed = 20,
 		
-		font = render.createFont("Roboto", 18, 600)
+		font = render.createFont("Roboto", 18, 600),
+		
+		cursorMainColor = Color(220, 220, 220),
+		cursorOutlineColor = Color(30, 30, 30),
+		cursorSize = 12,
+		cursorRender = cursor
 	},
 	
 	dark = {
@@ -49,7 +217,12 @@ local themes = {
 		barBorderSize = 1,
 		animationSpeed = 20,
 		
-		font = render.createFont("Roboto", 18, 600)
+		font = render.createFont("Roboto", 18, 600),
+		
+		cursorMainColor = Color(30, 30, 30),
+		cursorOutlineColor = Color(220, 220, 220),
+		cursorSize = 12,
+		cursorRender = cursor
 	}
 }
 
@@ -141,9 +314,11 @@ GUI = class {
 		_object_refs = {},
 		_render_order = {},
 		_remove_queue = {},
+		_parent_queue = {},
 		_focus_object = nil,
 		_last_click = 0,
 		_clicking_objects = {left = {}, right = {}},
+		_cursor_mode = 0,
 		_rtid = "",
 		_redraw = {},
 		_redraw_all = false,
@@ -180,24 +355,8 @@ GUI = class {
 			}
 			
 			local obj = element.class()
-			obj.parent = parent
-			obj.remove = function(o)
-				for child, child_object in pairs(self._object_refs[obj].children) do
-					child:remove()
-				end
-				
-				self._remove_queue[o] = true
-				-- if parent then
-				-- 	self._object_refs[parent].children[obj] = nil
-				-- else
-				-- 	self._objects[obj] = nil
-				-- end
-				-- self._object_refs[obj] = object
-			end
+			obj._gui = self
 			obj._theme = self.theme
-			obj._changed = function(o, simple)
-				self:_changed(o, simple)
-			end
 			
 			object.object = obj
 			
@@ -307,6 +466,19 @@ GUI = class {
 			end
 		end,
 		
+		renderCursor = function(self)
+			local cx, cy = self:getCursorPos()
+			local theme = self._theme
+			
+			local m = Matrix()
+			m:setTranslation(Vector(cx, cy))
+			m:setScale(Vector(self._theme.cursorSize / 32))
+			render.pushMatrix(m)
+			render.setMaterial()
+			theme.cursorRender[self._cursor_mode](theme.cursorMainColor, theme.cursorOutlineColor)
+			render.popMatrix()
+		end,
+		
 		think = function(self, cx, cy)
 			-- Remove objects
 			if table.count(self._remove_queue) > 0 then
@@ -340,6 +512,47 @@ GUI = class {
 				self._redraw_all = true
 			end
 			
+			-- Change parents
+			if table.count(self._parent_queue) > 0 then
+				for obj, _ in pairs(self._parent_queue) do
+					local object = self._object_refs[obj]
+					if object.parent then
+						local parent_object = self._object_refs[object.parent]
+						parent_object.children[obj] = nil
+						
+						for i, o in pairs(parent_object.order) do
+							if o == obj then
+								table.remove(parent_object.order, i)
+								
+								break
+							end
+						end
+					else
+						self._objects[obj] = nil
+						
+						for i, o in pairs(self._render_order) do
+							if o == obj then
+								table.remove(self._render_order, i)
+								
+								break
+							end
+						end
+					end
+					
+					if parent then
+						self._object_refs[parent].children[obj] = object
+						table.insert(self._object_refs[parent].order, 1, obj)
+					else
+						self._objects[obj] = object
+						table.insert(self._render_order, 1, obj)
+					end
+				end
+				
+				self._parent_queue = {}
+				
+				self._redraw_all = true
+			end
+			
 			-- Think
 			if not cx then
 				local _, x, y = xpcall(render.cursorPos, input.getCursorPos)
@@ -369,7 +582,10 @@ GUI = class {
 					local obj = object.object
 					local b = object.global_bounding
 					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
-						local hover = object
+						local hover
+						if obj._enabled then
+							hover = object
+						end
 						
 						for i, child in pairs(object.order) do
 							local h = dobj(object.children[child])
@@ -397,12 +613,12 @@ GUI = class {
 			end
 			
 			if self._focus_object ~= last then
-				if self._focus_object then
-					self._focus_object.object:_hoverStart()
-				end
-				
 				if last then
 					last.object:_hoverEnd()
+				end
+				
+				if self._focus_object then
+					self._focus_object.object:_hoverStart()
 				end
 			end
 		end,
@@ -418,6 +634,28 @@ GUI = class {
 				local _, x, y = xpcall(render.cursorPos, input.getCursorPos)
 				
 				return x, y
+			end
+		end,
+		
+		focus = function(self, obj)
+			local object = self._object_refs[obj]
+			
+			if obj.parent then
+				for i, o in pairs(obj.parent.order) do
+					if o == obj then
+						table.remove(obj.parent.order, i)
+					end
+				end
+				
+				table.insert(obj.parent.order, 1, obj)
+			else
+				for i, o in pairs(self._render_order) do
+					if o == obj then
+						table.remove(self._render_order, i)
+					end
+				end
+				
+				table.insert(self._render_order, 1, obj)
 			end
 		end,
 		
@@ -439,7 +677,23 @@ GUI = class {
 			for _, key in pairs({...}) do
 				self._buttons.right[key] = true
 			end
-		end
+		end,
+		
+		getButtonsLeft = function(self)
+			return self.buttonsLeft
+		end,
+		
+		getButtonsRight = function(self)
+			return self.buttonsRight
+		end,
+		
+		setDoubleclickTime = function(self, value)
+			self._doubleclick_time = value
+		end,
+		
+		getDoubleclickTime = function(self)
+			return self._doubleclick_time
+		end,
 	},
 	
 	----------------------------------------
@@ -506,6 +760,16 @@ GUI = class {
 				
 				return buttons
 			end
+		},
+		
+		doubleclickTime = {
+			set = function(self, value)
+				self._doubleclick_time = value
+			end,
+			
+			get = function(self)
+				return self.self._doubleclick_time
+			end
 		}
 	},
 	
@@ -515,6 +779,30 @@ GUI = class {
 		themes = themes,
 		
 		elements = {},
+		
+		------------------------------
+		
+		CURSORMODE = {
+			NORMAL = 0,
+			CLICKABLE = 1,
+			LOADING = 2,
+			DRAGGING = 3,
+			RESIZE = 4,
+			RESIZEX = 5,
+			RESIZEY = 6,
+			WRITEABLE = 7
+		},
+		
+		DOCK = {
+			NODOCK = 0,
+			FILL = 1,
+			LEFT = 2,
+			RIGHT = 3,
+			TOP = 4,
+			BOTTOM = 5
+		},
+		
+		------------------------------
 		
 		registerElement = function(name, data)
 			if GUI.elements[name] then
@@ -554,7 +842,7 @@ GUI = class {
 				
 				for k, v in pairs(i.properties) do
 					if not data.properties[k] then
-					local t = type(v) == "table"
+						local t = type(v) == "table"
 						data.properties[k] = t and table.copy(v) or v
 					end
 					

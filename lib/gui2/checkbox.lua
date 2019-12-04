@@ -312,12 +312,14 @@ return {
 		_hoverStart = function(self)
 			self:onHoverBegin()
 			
+			self:_cursorMode(GUI.CURSORMODE.CLICKABLE, GUI.CURSORMODE.NORMAL)
 			self._hovering = true
 		end,
 		
 		_hoverEnd = function(self)
 			self:onHoverEnd()
 			
+			self:_cursorMode(GUI.CURSORMODE.NORMAL, GUI.CURSORMODE.CLICKABLE)
 			self._hovering = false
 		end,
 		
