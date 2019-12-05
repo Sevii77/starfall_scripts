@@ -11,6 +11,7 @@ return {
 		_theme = true, -- Set in the core when created
 		
 		_enabled = true,
+		_translucent = false, -- Allow mouse rays to pass through
 		
 		_pos = true,
 		_x = 0,
@@ -154,12 +155,12 @@ return {
 			]]
 		end,
 		
-		_draw = function(self)
+		_draw = function(self, dt)
 			self:onDraw(self._w, self._h)
 			self:onDrawOver(self._w, self._h)
 		end,
 		
-		_think = function(self, cx, cy)
+		_think = function(self, dt, cx, cy)
 			
 		end,
 		
@@ -212,6 +213,16 @@ return {
 			
 			get = function(self)
 				return self._enabled
+			end
+		},
+		
+		translucent = {
+			set = function(self, state)
+				self._translucent = state
+			end,
+			
+			get = function(self)
+				return self._translucent
 			end
 		},
 		

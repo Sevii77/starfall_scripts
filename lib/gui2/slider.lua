@@ -12,22 +12,22 @@ end
 
 local styles = {
 	{
-		think = function(self, cx, cy)
+		think = function(self, dt, cx, cy)
 			local anim_speed = self.animationSpeed
 			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
+					self._hoverprogress = math.min(1, self._hoverprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
+				self._hoverprogress = math.max(0, self._hoverprogress - dt * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._holding then
 				if self._holdprogress < 1 then
-					self._holdprogress = math.min(1, self._holdprogress + timer.frametime() * anim_speed)
+					self._holdprogress = math.min(1, self._holdprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 				
@@ -45,7 +45,7 @@ local styles = {
 				
 				self:onHold()
 			elseif self._holdprogress > 0 then
-				self._holdprogress = math.max(0, self._holdprogress - timer.frametime() * anim_speed)
+				self._holdprogress = math.max(0, self._holdprogress - dt * anim_speed)
 				self:_changed(true)
 			end
 		end,
@@ -125,22 +125,22 @@ local styles = {
 	
 	
 	{
-		think = function(self, cx, cy)
+		think = function(self, dt, cx, cy)
 			local anim_speed = self.animationSpeed
 			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
+					self._hoverprogress = math.min(1, self._hoverprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
+				self._hoverprogress = math.max(0, self._hoverprogress - dt * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._holding then
 				if self._holdprogress < 1 then
-					self._holdprogress = math.min(1, self._holdprogress + timer.frametime() * anim_speed)
+					self._holdprogress = math.min(1, self._holdprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 				
@@ -228,7 +228,7 @@ return {
 		
 		------------------------------
 		
-		_think = function(self, cx, cy)
+		_think = function(self, dt, cx, cy)
 			
 		end,
 		

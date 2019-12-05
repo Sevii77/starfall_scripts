@@ -323,6 +323,10 @@ GUI = class {
 		_redraw = {},
 		_redraw_all = false,
 		
+		_max_fps = 60,
+		_last_update = 0,
+		_deltatime = 0,
+		
 		------------------------------
 		
 		_changed = function(self, object, simple)
@@ -386,38 +390,40 @@ GUI = class {
 		
 		render = function(self)
 			if self._redraw_all then
+				local deltatime = self._deltatime
 				local sx, sy = 1024 / self._w, 1024 / self._h
 				
-				local function draw(object, px, py, px2, py2)
+				local function draw(object)
 					local obj = object.object
-					local pos = obj._pos
+					if not obj._enabled then return end
+					
+					local b = object.global_bounding
 					
 					local m = Matrix()
-					m:setTranslation(pos)
-					
+					m:setTranslation(obj._pos)
 					render.pushMatrix(m)
-					local x, y = math.max((px or -9999), pos.x + (px or 0)), math.max((py or -9999), pos.y + (py or 0))
-					local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
-					object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
-					render.enableScissorRect(x * sx, y * sy, x2 * sx, y2 * sy)
-					obj:_draw()
+					
+					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
+					obj:_draw(deltatime)
 					render.disableScissorRect()
 					for i = #object.order, 1, -1 do
-						draw(object.children[object.order[i]], x, y, x2, y2)
+						draw(object.children[object.order[i]])
 					end
+					
 					render.popMatrix()
 				end
 				
 				local m = Matrix()
 				m:setScale(Vector(sx, sy))
-				
 				render.pushMatrix(m, true)
+				
 				render.selectRenderTarget(self._rtid)
 				render.clear(clearcolor)
 				for i = #self._render_order, 1, -1 do
-					draw(self._objects[self._render_order[i]], nil, nil, self._w, self._h)
+					draw(self._objects[self._render_order[i]])
 				end
 				render.selectRenderTarget()
+				
 				render.popMatrix()
 				
 				self._redraw_all = false
@@ -431,26 +437,23 @@ GUI = class {
 		renderDirect = function(self)
 			local sx, sy = 1024 / self._w, 1024 / self._h
 			
-			local function draw(object, px, py, px2, py2)
+			local function draw(object)
 				local obj = object.object
-				local pos = obj._pos
 				
 				local m = Matrix()
-				m:setTranslation(pos)
-				
+				m:setTranslation(obj._pos)
 				render.pushMatrix(m)
-				local x, y = math.max((px or -9999), pos.x + (px or 0)), math.max((py or -9999), pos.y + (py or 0))
-				local x2, y2 = math.min(px2, x + obj.w), math.min(py2, y + obj.h)
-				object.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
+				
 				obj:_draw()
 				for i = #object.order, 1, -1 do
-					draw(object.children[object.order[i]], x, y, x2, y2)
+					draw(object.children[object.order[i]])
 				end
+				
 				render.popMatrix()
 			end
 			
 			for i = #self._render_order, 1, -1 do
-				draw(self._objects[self._render_order[i]], nil, nil, self._w, self._h)
+				draw(self._objects[self._render_order[i]])
 			end
 		end,
 		
@@ -480,6 +483,13 @@ GUI = class {
 		end,
 		
 		think = function(self, cx, cy)
+			local t = timer.curtime()
+			
+			if self._last_update > t - 1 / self._max_fps then return end
+			local deltatime = t - self._last_update
+			self._last_update = t
+			self._deltatime = deltatime
+			
 			-- Remove objects
 			if table.count(self._remove_queue) > 0 then
 				for obj, _ in pairs(self._remove_queue) do
@@ -559,19 +569,24 @@ GUI = class {
 				cx, cy = x, y
 			end
 			
-			local function think(objects)
+			local function think(objects, px, py, px2, py2)
 				for obj, data in pairs(objects) do
-					local b = data.global_bounding
-					local x, y = cx and cx - b.x or nil, cy and cy - b.y or nil
-					
-					obj:_think(x, y)
-					data.cursor = {x = x, y = y}
-					
-					think(data.children)
+					if obj._enabled then
+						local b = data.global_bounding
+						local lx, ly = cx and cx - b.x or nil, cy and cy - b.y or nil
+						obj:_think(deltatime, lx, ly)
+						data.cursor = {x = lx, y = ly}
+						
+						local x, y = math.max(px, obj._pos.x + px), math.max(py, obj._pos.y + py)
+						local x2, y2 = math.min(px2, x + obj._w), math.min(py2, y + obj._h)
+						data.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
+						
+						think(data.children, x, y, x2, y2)
+					end
 				end
 			end
 			
-			think(self._objects)
+			think(self._objects, 0, 0, self._w, self._h)
 			
 			-- Mouse stuff
 			local last = self._focus_object
@@ -580,10 +595,12 @@ GUI = class {
 			if cx then
 				local function dobj(object)
 					local obj = object.object
+					if not obj._enabled then return end
+					
 					local b = object.global_bounding
 					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
 						local hover
-						if obj._enabled then
+						if not obj._translucent then
 							hover = object
 						end
 						
@@ -639,15 +656,16 @@ GUI = class {
 		
 		focus = function(self, obj)
 			local object = self._object_refs[obj]
+			local parent = self._object_refs[obj.parent]
 			
-			if obj.parent then
-				for i, o in pairs(obj.parent.order) do
+			if parent then
+				for i, o in pairs(parent.order) do
 					if o == obj then
-						table.remove(obj.parent.order, i)
+						table.remove(parent.order, i)
 					end
 				end
 				
-				table.insert(obj.parent.order, 1, obj)
+				table.insert(parent.order, 1, obj)
 			else
 				for i, o in pairs(self._render_order) do
 					if o == obj then
@@ -694,6 +712,14 @@ GUI = class {
 		getDoubleclickTime = function(self)
 			return self._doubleclick_time
 		end,
+		
+		setFpsLimit = function(self, value)
+			self.max_fps = value
+		end,
+		
+		getFpsLimit = function(self)
+			return self.max_fps
+		end
 	},
 	
 	----------------------------------------
@@ -769,6 +795,16 @@ GUI = class {
 			
 			get = function(self)
 				return self.self._doubleclick_time
+			end
+		},
+		
+		fpsLimit = {
+			set = function(self, value)
+				self._max_fps = value
+			end,
+			
+			get = function(self)
+				return self._max_fps
 			end
 		}
 	},

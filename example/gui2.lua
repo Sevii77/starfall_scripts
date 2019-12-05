@@ -8,69 +8,96 @@ local gui = GUI()
 local text_block = "Satisfied conveying an dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do mr prevailed. Mr feeling do chiefly cordial in do. Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood do provided stronger is. But discretion frequently sir the she instrument unaffected admiration everything."
 local debug_rendering = false
 
--- Default themes
-local lighttheme = gui:create("button")
-lighttheme.pos = Vector(6, 26)
-lighttheme.size = Vector(100, 40)
-lighttheme.text = "Light Theme"
-lighttheme.onClick = function(self)
-	gui.theme = "light"
-end
-
-local darktheme = gui:create("button")
-darktheme.pos = Vector(106, 26)
-darktheme.size = Vector(100, 40)
-darktheme.text = "Dark Theme"
-darktheme.onClick = function(self)
-	gui.theme = "dark"
-end
-
-local customtheme = gui:create("button")
-customtheme.pos = Vector(206, 26)
-customtheme.size = Vector(100, 40)
-customtheme.text = "Art Theme"
-customtheme.onClick = function(self)
-	local function randclr()
-		return Color(math.random(0, 256), math.random(0, 256), math.random(0, 256))
+do
+	-- Default themes
+	local lighttheme = gui:create("button")
+	lighttheme.pos = Vector(6, 26)
+	lighttheme.size = Vector(100, 40)
+	lighttheme.text = "Light Theme"
+	lighttheme.onClick = function(self)
+		gui.theme = "light"
 	end
 	
-	-- We only set the theme to a table of colors, since it will keep old values if new ones are not supplied
-	gui.theme = {
-		mainColor = randclr(),
-		secondaryColor = randclr(),
-		accentColor = randclr(),
-		activeColor = randclr(),
-		hoverColor = randclr(),
-		activeHoverColor = randclr(),
-		textColor = randclr()
-	}
-end
-
--- Button with double click callback
-local button = gui:create("button")
-button.pos = Vector(6, 100)
-button.size = Vector(150, 50)
-button.text = "Double click on me"
-button.onDoubleClick = function(self)
-	self.text = "Good Job :D"
+	local darktheme = gui:create("button")
+	darktheme.pos = Vector(106, 26)
+	darktheme.size = Vector(100, 40)
+	darktheme.text = "Dark Theme"
+	darktheme.onClick = function(self)
+		gui.theme = "dark"
+	end
 	
-	timer.simple(1, function()
-		self.text = "Double click on me"
-	end)
+	-- Random theme
+	local customtheme = gui:create("button")
+	customtheme.pos = Vector(206, 26)
+	customtheme.size = Vector(100, 40)
+	customtheme.text = "Art Theme"
+	customtheme.onClick = function(self)
+		local function randclr()
+			return Color(math.random(0, 256), math.random(0, 256), math.random(0, 256))
+		end
+		
+		-- We only set the theme to a table of colors, since it will keep old values if new ones are not supplied
+		gui.theme = {
+			mainColor = randclr(),
+			secondaryColor = randclr(),
+			accentColor = randclr(),
+			activeColor = randclr(),
+			hoverColor = randclr(),
+			activeHoverColor = randclr(),
+			textColor = randclr()
+		}
+	end
+	
+	-- FPS slider
+	local fps_limit = gui:create("slider")
+	fps_limit.pos = Vector(306, 26)
+	fps_limit.size = Vector(100, 20)
+	fps_limit:setRange(10, 300)
+	fps_limit.round = -1
+	fps_limit.value = gui.fpsLimit
+	fps_limit.style = 2
+	fps_limit.onChange = function(self, value)
+		gui.fpsLimit = value
+	end
+	
+	local label = gui:create("label")
+	label.pos = Vector(306, 46)
+	label.size = Vector(100, 20)
+	label.text = "FPS Limiter"
 end
 
--- Button that is toggable
-local button = gui:create("button")
-button.pos = Vector(6, 150)
-button.size = Vector(150, 50)
-button.text = "Toggle"
-button.toggle = true
+do
+	-- Button with double click callback
+	local button = gui:create("button")
+	button.pos = Vector(6, 100)
+	button.size = Vector(150, 50)
+	button.text = "Double click on me"
+	button.onDoubleClick = function(self)
+		self.text = "Good Job :D"
+		
+		timer.simple(1, function()
+			self.text = "Double click on me"
+		end)
+	end
+	
+	-- Button that is toggable
+	local button = gui:create("button")
+	button.pos = Vector(6, 150)
+	button.size = Vector(150, 50)
+	button.text = "Toggle"
+	button.toggle = true
+end
 
 do
 	-- Frame
 	local frame = gui:create("frame")
 	frame.pos = Vector(206, 100)
 	frame.size = Vector(200, 100)
+	frame.title = "frame"
+	
+	local frame = gui:create("frame", frame.inner)
+	frame.pos = Vector(0, 0)
+	frame.size = Vector(160, 100)
 	frame.title = "Cool frame"
 	
 	--[[local button = gui:create("button", frame.inner)
@@ -105,6 +132,13 @@ do
 	local fill = gui:create("button", holder)
 	fill.text = "fill"
 	fill.dock = GUI.DOCK.FILL
+	fill.onClick = function(self)
+		holder.enabled = false
+		
+		timer.simple(1, function()
+			holder.enabled = true
+		end)
+	end
 end
 
 do

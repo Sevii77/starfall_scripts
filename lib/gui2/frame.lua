@@ -14,7 +14,7 @@ return {
 	inherit = "container",
 	constructor = function(self)
 		self._inner = self._gui:create("base", self)
-		self._inner._enabled = false
+		self._inner.translucent = true
 		self._inner.dock = 1
 		
 		self:_calculateInner()
@@ -50,14 +50,13 @@ return {
 			local b = self.borderSize
 			local th = self._title_height
 			
-			local inner = self._inner
-			inner.dockMargin = {l = b, t = th, r = b, b = b}
+			self._inner:setDockMargin(b, th, b, b)
 		end,
 		
 		------------------------------
 		
-		_think = function(self)
-			local x, y = self._gui:getCursorPos()
+		_think = function(self, dt)
+			local x, y = self._gui:getCursorPos(self.parent)
 			local g = self._grab
 			
 			if x and g then
@@ -89,11 +88,11 @@ return {
 			if self._closeable then
 				if self._close_hovering then
 					if self._close_hoverprogress < 1 then
-						self._close_hoverprogress = math.min(1, self._close_hoverprogress + timer.frametime() * self.animationSpeed)
+						self._close_hoverprogress = math.min(1, self._close_hoverprogress + dt * self.animationSpeed)
 						self:_changed(true)
 					end
 				elseif self._close_hoverprogress > 0 then
-					self._close_hoverprogress = math.max(0, self._close_hoverprogress - timer.frametime() * self.animationSpeed)
+					self._close_hoverprogress = math.max(0, self._close_hoverprogress - dt * self.animationSpeed)
 					self:_changed(true)
 				end
 			end
@@ -225,6 +224,7 @@ return {
 				self._w = size.x
 				self._h = size.y
 				
+				self:_calculateInner()
 				self:_updateDockingParent()
 				self:_changed()
 			end,
@@ -239,6 +239,7 @@ return {
 				self._size.x = w
 				self._w = w
 				
+				self:_calculateInner()
 				self:_updateDockingParent()
 				self:_changed()
 			end,
@@ -253,6 +254,7 @@ return {
 				self._size.y = h
 				self._h = h
 				
+				self:_calculateInner()
 				self:_updateDockingParent()
 				self:_changed()
 			end,

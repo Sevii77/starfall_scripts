@@ -20,8 +20,6 @@ return {
 			local w, h = render.getTextSize(self._text)
 			local ax, ay = self._text_alignment_x, self._text_alignment_y
 			
-			self._true_pos = self._pos
-			
 			self._pos = Vector(self._x - (ax == 0 and 0 or (ax == 1 and w / 2 or w)), self._y - (ay == 3 and 0 or (ay == 1 and h / 2 or h)))
 			self._size = Vector(w, h)
 			self._w, self._h = w, h
@@ -30,9 +28,11 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
+			local ax = self._text_alignment_x
+			
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			render.drawText(0, 0, self.text)
+			render.drawText((ax == 0 and 0 or (ax == 1 and w / 2 or w)), 0, self.text, ax)
 		end
 	},
 	

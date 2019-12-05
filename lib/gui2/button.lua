@@ -21,22 +21,22 @@ return {
 		
 		------------------------------
 		
-		_think = function(self)
+		_think = function(self, dt)
 			local anim_speed = self.animationSpeed
 			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
+					self._hoverprogress = math.min(1, self._hoverprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
+				self._hoverprogress = math.max(0, self._hoverprogress - dt * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._click or (not self._toggle and self._click_right) then
 				if self._clickprogress < 1 then
-					self._clickprogress = math.min(1, self._clickprogress + timer.frametime() * anim_speed)
+					self._clickprogress = math.min(1, self._clickprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 				
@@ -47,7 +47,7 @@ return {
 					self:onRightHold()
 				end
 			elseif self._clickprogress > 0 then
-				self._clickprogress = math.max(0, self._clickprogress - timer.frametime() * anim_speed)
+				self._clickprogress = math.max(0, self._clickprogress - dt * anim_speed)
 				self:_changed(true)
 			end
 		end,

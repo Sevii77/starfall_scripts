@@ -274,26 +274,26 @@ return {
 		
 		------------------------------
 		
-		_think = function(self, cx, cy)
+		_think = function(self, dt, cx, cy)
 			local anim_speed = self.animationSpeed
 			
 			if self._hovering then
 				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + timer.frametime() * anim_speed)
+					self._hoverprogress = math.min(1, self._hoverprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - timer.frametime() * anim_speed)
+				self._hoverprogress = math.max(0, self._hoverprogress - dt * anim_speed)
 				self:_changed(true)
 			end
 			
 			if self._state then
 				if self._stateprogress < 1 then
-					self._stateprogress = math.min(1, self._stateprogress + timer.frametime() * anim_speed)
+					self._stateprogress = math.min(1, self._stateprogress + dt * anim_speed)
 					self:_changed(true)
 				end
 			elseif self._stateprogress > 0 then
-				self._stateprogress = math.max(0, self._stateprogress - timer.frametime() * anim_speed)
+				self._stateprogress = math.max(0, self._stateprogress - dt * anim_speed)
 				self:_changed(true)
 			end
 		end,
