@@ -7,23 +7,25 @@ local stencil = {}
 ----------------------------------------
 
 function stencil.pushMask(mask, invert)
+	render.setStencilWriteMask(0xFF)
+	render.setStencilTestMask(0xFF)
 	render.setStencilReferenceValue(0)
-	render.setStencilPassOperation(STENCIL.KEEP)
-	render.setStencilZFailOperation(STENCIL.KEEP)
+	render.setStencilCompareFunction(8)
+	render.setStencilPassOperation(1)
+	render.setStencilFailOperation(1)
+	render.setStencilZFailOperation(1)
 	render.clearStencil()
 	
 	render.setStencilEnable(true)
-	render.setStencilCompareFunction(STENCIL.NEVER)
-	render.setStencilFailOperation(STENCIL.REPLACE)
 	
-	render.setStencilReferenceValue(0x1C)
-	render.setStencilWriteMask(0x55)
+	render.setStencilReferenceValue(1)
+	render.setStencilCompareFunction(1)
+	render.setStencilFailOperation(3)
 	
 	mask()
 	
-	render.setStencilTestMask(0xF3)
-	render.setStencilReferenceValue(0x10)
 	render.setStencilCompareFunction(invert and STENCIL.EQUAL or STENCIL.NOTEQUAL)
+	render.setStencilFailOperation(1)
 end
 
 function stencil.popMask()

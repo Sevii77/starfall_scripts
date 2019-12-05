@@ -219,6 +219,111 @@ do
 	text.textAlignmentY = 3
 end
 
+do -- Custom element with custom masks example
+	GUI.registerElement("rounded_button", {
+		inherit = "button",
+		constructor = function(self)
+		
+		end,
+		
+		data = {
+			_corner_size = 10,
+			_mask_poly = {},
+			
+			--
+			
+			_calculateMaskPoly = function(self)
+				local cs = self._corner_size
+				local w, h = self._w, self._h
+				local poly = {}
+				
+				-- Top Left
+				for i = 0, 9 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = cs - math.cos(rad) * cs, y = cs - math.sin(rad) * cs})
+				end
+				
+				-- Top Right
+				for i = 9, 18 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = w - cs - math.cos(rad) * cs, y = cs - math.sin(rad) * cs})
+				end
+				
+				-- Bottom Right
+				for i = 18, 27 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = w - cs - math.cos(rad) * cs, y = h - cs - math.sin(rad) * cs})
+				end
+				
+				-- Bottom Left
+				for i = 27, 36 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = cs - math.cos(rad) * cs, y = h - cs - math.sin(rad) * cs})
+				end
+				
+				self._mask_poly = poly
+			end,
+			
+			_sizeChanged = function(self)
+				self:_calculateMaskPoly()
+			end,
+			
+			--
+			
+			_invert_render_mask = false,
+			
+			_custonRenderMask = function(self, w, h)
+				-- We use a poly here instead of roundedBox because masks dont support texture filtering
+				render.drawPoly(self._mask_poly)
+			end,
+			
+			_custonInputMask = function(self, cx, cy)
+				-- We also wanna have a input mask so if we hover over the rounded corners it doesnt activate
+				local cs = self._corner_size
+				local w, h = self._w, self._h
+				
+				local function out(x, y)
+					-- https://i.imgur.com/uvhJnv9.png
+					local x, y = math.abs(x / cs), math.abs(y / cs)
+					
+					if x > 1 or y > 1 then return false end
+					
+					local x, y = x - 1, y - 1
+					if math.sqrt(x * x + y * y) < 1 then return false end
+					
+					return true
+				end
+				
+				if out(cx, cy) then return false end
+				if out(cx - w, cy) then return false end
+				if out(cx - w, cy - h) then return false end
+				if out(cx, cy - h) then return false end
+				
+				return true
+			end
+		},
+		
+		properties = {
+			cornerSize = {
+				set = function(self, value)
+					self._corner_size = value
+					self:_calculateMaskPoly()
+				end,
+				
+				get = function(self)
+					return self._corner_size
+				end
+			}
+		}
+	})
+	
+	local rounded = gui:create("rounded_button")
+	rounded.pos = Vector(416, 240)
+	rounded.size = Vector(90, 266)
+	rounded.cornerSize = 30
+	rounded.text = "a\nfancy\nrounded\nbutton\n:)"
+end
+
 -- Rendering of gui
 hook.add("render", "", function()
 	gui:think()

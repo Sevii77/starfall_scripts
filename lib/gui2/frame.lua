@@ -53,6 +53,10 @@ return {
 			self._inner:setDockMargin(b, th, b, b)
 		end,
 		
+		_sizeChanged = function(self)
+			self:_calculateInner()
+		end,
+		
 		------------------------------
 		
 		_think = function(self, dt)
@@ -218,54 +222,6 @@ return {
 	----------------------------------------
 	
 	properties = {
-		size = {
-			set = function(self, size)
-				self._size = size
-				self._w = size.x
-				self._h = size.y
-				
-				self:_calculateInner()
-				self:_updateDockingParent()
-				self:_changed()
-			end,
-			
-			get = function(self)
-				return self._size
-			end
-		},
-		
-		w = {
-			set = function(self, w)
-				self._size.x = w
-				self._w = w
-				
-				self:_calculateInner()
-				self:_updateDockingParent()
-				self:_changed()
-			end,
-			
-			get = function(self)
-				return self._w
-			end
-		},
-		
-		h = {
-			set = function(self, h)
-				self._size.y = h
-				self._h = h
-				
-				self:_calculateInner()
-				self:_updateDockingParent()
-				self:_changed()
-			end,
-			
-			get = function(self)
-				return self._h
-			end
-		},
-		
-		------------------------------
-		
 		title = {
 			set = function(self, text)
 				self._title = text

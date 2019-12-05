@@ -1,6 +1,6 @@
 --@includedir ./gui2
 --@include ./class.lua
---include ./stencil.lua
+--@include ./stencil.lua
 
 --[[
 	TODO:
@@ -12,7 +12,7 @@
 ]]
 
 local class, checktype = unpack(require("./class.lua"))
--- local stencil = require("./stencil.lua")
+local stencil = require("./stencil.lua")
 
 ----------------------------------------
 
@@ -404,10 +404,20 @@ GUI = class {
 					render.pushMatrix(m)
 					
 					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
+					
+					local crm = obj._custonRenderMask
+					if crm then
+						stencil.pushMask(function() crm(obj, obj._w, obj._h) end, not obj._invert_render_mask)
+					end
+					
 					obj:_draw(deltatime)
 					render.disableScissorRect()
 					for i = #object.order, 1, -1 do
 						draw(object.children[object.order[i]])
+					end
+					
+					if crm then
+						stencil.popMask()
 					end
 					
 					render.popMatrix()
@@ -569,7 +579,7 @@ GUI = class {
 				cx, cy = x, y
 			end
 			
-			local function think(objects, px, py, px2, py2)
+			local function think(objects, px, py, px2, py2, px3, py3)
 				for obj, data in pairs(objects) do
 					if obj._enabled then
 						local b = data.global_bounding
@@ -577,16 +587,17 @@ GUI = class {
 						obj:_think(deltatime, lx, ly)
 						data.cursor = {x = lx, y = ly}
 						
-						local x, y = math.max(px, obj._pos.x + px), math.max(py, obj._pos.y + py)
-						local x2, y2 = math.min(px2, x + obj._w), math.min(py2, y + obj._h)
+						local x3, y3 = obj._pos.x + px3, obj._pos.y + py3
+						local x, y = math.clamp(px, x3, px2), math.clamp(py, y3, py2)
+						local x2, y2 = math.clamp(x3 + obj._w, x, px2), math.clamp(y3 + obj._h, y, py2)
 						data.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
 						
-						think(data.children, x, y, x2, y2)
+						think(data.children, x, y, x2, y2, x3, y3)
 					end
 				end
 			end
 			
-			think(self._objects, 0, 0, self._w, self._h)
+			think(self._objects, 0, 0, self._w, self._h, 0, 0)
 			
 			-- Mouse stuff
 			local last = self._focus_object
@@ -599,6 +610,11 @@ GUI = class {
 					
 					local b = object.global_bounding
 					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
+						local cim = obj._custonInputMask
+						if cim and not cim(obj, object.cursor.x, object.cursor.y) then
+							return
+						end
+						
 						local hover
 						if not obj._translucent then
 							hover = object

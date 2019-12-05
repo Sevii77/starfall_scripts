@@ -38,6 +38,16 @@ return {
 		end,
 		
 		------------------------------
+		
+		_sizeChanged = function(self)
+			-- Called by base, can be overwritten so you dont have to overwrite all 3 size properties
+		end,
+		
+		_posChanged = function(self)
+			-- Called by base, can be overwritten so you dont have to overwrite all 3 pos properties
+		end,
+		
+		------------------------------
 		-- Docking
 		-- enum list available through GUI.DOCK
 		
@@ -255,6 +265,7 @@ return {
 				self._x = pos.x
 				self._y = pos.y
 				
+				self:_posChanged()
 				self:_changed()
 			end,
 			
@@ -268,6 +279,7 @@ return {
 				self._pos.x = x
 				self._x = x
 				
+				self:_posChanged()
 				self:_changed()
 			end,
 			
@@ -281,6 +293,7 @@ return {
 				self._pos.y = y
 				self._y = y
 				
+				self:_posChanged()
 				self:_changed()
 			end,
 			
@@ -297,6 +310,7 @@ return {
 				self._w = size.x
 				self._h = size.y
 				
+				self:_sizeChanged()
 				self:_updateDockingParent()
 				self:_changed()
 			end,
@@ -311,6 +325,7 @@ return {
 				self._size.x = w
 				self._w = w
 				
+				self:_sizeChanged()
 				self:_updateDockingParent()
 				self:_changed()
 			end,
@@ -325,6 +340,7 @@ return {
 				self._size.y = h
 				self._h = h
 				
+				self:_sizeChanged()
 				self:_updateDockingParent()
 				self:_changed()
 			end,
