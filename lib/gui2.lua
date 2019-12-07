@@ -534,7 +534,7 @@ GUI = class {
 			
 			-- Change parents
 			if table.count(self._parent_queue) > 0 then
-				for obj, _ in pairs(self._parent_queue) do
+				for obj, parent in pairs(self._parent_queue) do
 					local object = self._object_refs[obj]
 					if object.parent then
 						local parent_object = self._object_refs[object.parent]

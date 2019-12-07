@@ -119,6 +119,9 @@ return {
 						child._pos.y = y
 						child._x = x
 						child._y = y
+						
+						child:_posChanged()
+						child:_changed()
 					end
 					
 					-- For some reason w and ow are always the same? i dont understand
@@ -128,6 +131,7 @@ return {
 						child._w = w
 						child._h = h
 						
+						child:_sizeChanged()
 						child:_updateDocking()
 						child:_changed()
 					--end
@@ -219,6 +223,8 @@ return {
 		enabled = {
 			set = function(self, state)
 				self._enabled = state
+				
+				self:_changed()
 			end,
 			
 			get = function(self)
@@ -238,7 +244,7 @@ return {
 		
 		parent = {
 			set = function(self, parent)
-				self._gui._parent_queue[self] = true
+				self._gui._parent_queue[self] = parent
 			end,
 			
 			get = function(self)
@@ -260,10 +266,17 @@ return {
 		------------------------------
 		
 		pos = {
-			set = function(self, pos)
-				self._pos = pos
-				self._x = pos.x
-				self._y = pos.y
+			set = function(self, x, y)
+				if y then
+					self._pos.x = x
+					self._pos.y = y
+					self._x = x
+					self._y = y
+				else
+					self._pos = x
+					self._x = x.x
+					self._y = x.y
+				end
 				
 				self:_posChanged()
 				self:_changed()
@@ -305,10 +318,17 @@ return {
 		------------------------------
 		
 		size = {
-			set = function(self, size)
-				self._size = size
-				self._w = size.x
-				self._h = size.y
+			set = function(self, w, h)
+				if h then
+					self._size.x = w
+					self._size.y = h
+					self._w = w
+					self._h = h
+				else
+					self._size = w
+					self._w = w.x
+					self._h = w.y
+				end
 				
 				self:_sizeChanged()
 				self:_updateDockingParent()

@@ -95,49 +95,62 @@ do
 	frame.size = Vector(200, 100)
 	frame.title = "frame"
 	
-	local frame = gui:create("frame", frame.inner)
-	frame.pos = Vector(0, 0)
-	frame.size = Vector(160, 100)
-	frame.title = "Cool frame"
+	-- Docking
+	local docking_frame = gui:create("frame", frame.inner)
+	docking_frame.pos = Vector(0, 0)
+	docking_frame.size = Vector(160, 100)
+	docking_frame.title = "docking frame"
+	docking_frame.enabled = true
 	
-	--[[local button = gui:create("button", frame.inner)
-	button.text = "button in\na frame"
-	button.dock = 1
-	button.dockMargin = {l = 5, t = 5, r = 5, b = 5}]]
-	
-	local holder = gui:create("container", frame.inner)
-	holder.dock = GUI.DOCK.FILL
-	holder:setDockMargin(5, 5, 5, 5)
-	
-	local left = gui:create("button", holder)
-	left.w = 30
-	left.text = "left"
-	left.dock = GUI.DOCK.LEFT
-	
-	local right = gui:create("button", holder)
-	right.w = 30
-	right.text = "right"
-	right.dock = GUI.DOCK.RIGHT
-	
-	local top = gui:create("button", holder)
-	top.h = 20
-	top.text = "top"
-	top.dock = GUI.DOCK.TOP
-	
-	local bottom = gui:create("button", holder)
-	bottom.h = 20
-	bottom.text = "bottom"
-	bottom.dock = GUI.DOCK.BOTTOM
-	
-	local fill = gui:create("button", holder)
-	fill.text = "fill"
-	fill.dock = GUI.DOCK.FILL
-	fill.onClick = function(self)
-		holder.enabled = false
+	do
+		local holder = gui:create("base", docking_frame.inner)
+		holder.dock = GUI.DOCK.FILL
+		holder:setDockMargin(5, 5, 5, 5)
 		
-		timer.simple(1, function()
-			holder.enabled = true
-		end)
+		local left = gui:create("button", holder)
+		left.w = 30
+		left.text = "left"
+		left.dock = GUI.DOCK.LEFT
+		
+		local right = gui:create("button", holder)
+		right.w = 30
+		right.text = "right"
+		right.dock = GUI.DOCK.RIGHT
+		
+		local top = gui:create("button", holder)
+		top.h = 20
+		top.text = "top"
+		top.dock = GUI.DOCK.TOP
+		
+		local bottom = gui:create("button", holder)
+		bottom.h = 20
+		bottom.text = "bottom"
+		bottom.dock = GUI.DOCK.BOTTOM
+		
+		local fill = gui:create("button", holder)
+		fill.text = "fill"
+		fill.dock = GUI.DOCK.FILL
+	end
+	
+	-- Grid
+	local grid_frame = gui:create("frame", frame.inner)
+	grid_frame.pos = Vector(30, 30)
+	grid_frame.size = Vector(160, 100)
+	grid_frame.title = "grid frame"
+	grid_frame.enabled = true
+	
+	do
+		local grid = gui:create("grid", grid_frame.inner)
+		grid.itemSize = Vector(50, 20)
+		grid.dock = GUI.DOCK.FILL
+		grid:setDockMargin(5, 5, 5, 5)
+		
+		for i = 1, 10 do
+			local button = gui:create("button")
+			button.text = tostring(i)
+			
+			grid:addItem(button)
+		end
 	end
 end
 
