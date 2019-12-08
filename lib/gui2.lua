@@ -421,7 +421,7 @@ GUI = class {
 					-- end
 					
 					local m = Matrix()
-					m:setTranslation(Vector(b.x, b.y))
+					m:setTranslation(obj._pos)
 					
 					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
 					render.pushMatrix(m)
@@ -434,7 +434,6 @@ GUI = class {
 					end
 					
 					obj:_draw(deltatime)
-					render.popMatrix()
 					render.disableScissorRect()
 					
 					if crm then
@@ -444,19 +443,19 @@ GUI = class {
 					for i = #object.order, 1, -1 do
 						draw(object.children[object.order[i]], masks)
 					end
+					
+					render.popMatrix()
 				end
 				
 				local m = Matrix()
 				m:setScale(s)
 				render.pushMatrix(m, true)
-				
 				render.selectRenderTarget(self._rtid)
 				render.clear(clearcolor)
 				for i = #self._render_order, 1, -1 do
 					draw(self._objects[self._render_order[i]], {})
 				end
 				render.selectRenderTarget()
-				
 				render.popMatrix()
 				
 				self._redraw_all = false
@@ -606,14 +605,14 @@ GUI = class {
 				for obj, data in pairs(objects) do
 					if obj._enabled then
 						local b = data.global_bounding
-						local lx, ly = cx and cx - b.x or nil, cy and cy - b.y or nil
+						local lx, ly = cx and cx - b.gx or nil, cy and cy - b.gy or nil
 						obj:_think(deltatime, lx, ly)
 						data.cursor = {x = lx, y = ly}
 						
 						local x3, y3 = obj._pos.x + px3, obj._pos.y + py3
 						local x, y = math.clamp(px, x3, px2), math.clamp(py, y3, py2)
 						local x2, y2 = math.clamp(x3 + obj._w, x, px2), math.clamp(y3 + obj._h, y, py2)
-						data.global_bounding = {x = x, y = y, x2 = x2, y2 = y2}
+						data.global_bounding = {x = x, y = y, x2 = x2, y2 = y2, gx = x3, gy = y3}
 						
 						think(data.children, x, y, x2, y2, x3, y3)
 					end

@@ -20,6 +20,7 @@ return {
 		_animation_speed = false,
 		
 		_hovering = false,
+		_click_anim = false,
 		_click = false,
 		_click_right = false,
 		_cursor = false,
@@ -30,11 +31,16 @@ return {
 			local anim_speed = dt * self.animationSpeed
 			
 			self:_animationUpdate("hover", self._hovering, anim_speed)
-			self:_animationUpdate("click", self._click or self._click_right, anim_speed)
+			
+			local _, p = self:_animationUpdate("click", self._click_anim, anim_speed)
+			if p == 1 and not self._click and not self._click_right then
+				self._click_anim = false
+			end
 		end,
 		
 		_press = function(self)
 			self._click = not self._toggle and true or not self._click
+			self._click_anim = true
 			
 			local x, y = self._gui:getCursorPos(self)
 			self._cursor = Vector(x, y)
@@ -44,6 +50,7 @@ return {
 		
 		_pressRight = function(self)
 			self._click_right = true
+			self._click_anim = true
 			
 			local x, y = self._gui:getCursorPos(self)
 			self._cursor = Vector(x, y)
@@ -104,10 +111,10 @@ return {
 				local w, h = math.max(w - self._cursor.x, self._cursor.x) + 1, math.max(h - self._cursor.y, self._cursor.y) + 1
 				local m = Matrix()
 				m:setTranslation(self._cursor)
-				m:setScale(Vector((self._click and p or 1) * math.sqrt(w * w + h * h) * 2))
+				m:setScale(Vector((self._click_anim and p or 1) * math.sqrt(w * w + h * h) * 2))
 				
 				render.pushMatrix(m)
-				render.setColor(GUI.lerpColor(self.activeColor, clr, self._click and 0 or (1 - p)))
+				render.setColor(GUI.lerpColor(self.activeColor, clr, self._click_anim and 0 or (1 - p)))
 				render.drawPoly(circle)
 				render.popMatrix()
 			end
