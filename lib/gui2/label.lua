@@ -1,15 +1,16 @@
 return {
 	inherit = "container",
 	constructor = function(self)
-		
+		self:_createShapePoly()
 	end,
 	
 	----------------------------------------
 	
 	data = {
+		_text_color = false,
+		
 		_text = "",
 		_font = false,
-		_text_color = false,
 		_text_alignment_x = 1,
 		_text_alignment_y = 1,
 		_text_wrap = false,
@@ -22,7 +23,6 @@ return {
 		_wrapText = function(self)
 			local str = ""
 			local line = ""
-			local b = self.borderSize * 2
 			local height = nil
 			
 			self._text_height = 0
@@ -41,7 +41,7 @@ return {
 						height = h
 					end
 					
-					if w > self._w - b then
+					if w > self._w then
 						str = str .. line .. "\n"
 						line = word
 						
@@ -71,20 +71,50 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
-			self.base()
+			base()
 			
 			local ax, ay = self._text_alignment_x, self._text_alignment_y
-			local b = self.borderSize
+			local th = self._text_height
+			local to = h - th
+			local to2 = to / 2
 			
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			render.drawText(ax == 0 and b or (ax == 1 and w / 2 or w - b), ay == 3 and b or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height - b), self.text, ax)
+			render.drawText(ax == 0 and to2 or (ax == 1 and w / 2 or w - to2), ay == 3 and to2 or (ay == 1 and to2 or h - th), self.text, ax)
 		end
 	},
 	
 	----------------------------------------
 	
 	properties = {
+		mainColor = {
+			set = function(self, color)
+				self._main_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._main_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryColorDark
+			end
+		},
+		
+		textColor = {
+			set = function(self, color)
+				self._text_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._text_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryTextColor
+			end
+		},
+		
+		------------------------------
+		
 		text = {
 			set = function(self, text)
 				self._text_raw = text
@@ -119,18 +149,6 @@ return {
 			
 			get = function(self)
 				return self._font or self._theme.font
-			end
-		},
-		
-		textColor = {
-			set = function(self, color)
-				self._text_color = color
-				
-				self:_changed(true)
-			end,
-			
-			get = function(self)
-				return self._text_color or self._theme.textColor
 			end
 		},
 		

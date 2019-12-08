@@ -1,3 +1,9 @@
+local circle = {}
+for i = 1, 32 do
+	local rad = i / 16 * math.pi
+	circle[i] = {x = -math.sin(rad) / 2, y = math.cos(rad) / 2}
+end
+
 return {
 	inherit = "label",
 	constructor = function(self)
@@ -7,59 +13,40 @@ return {
 	----------------------------------------
 	
 	data = {
-		_toggle = false,
-		_animation_speed = false,
 		_active_color = false,
 		_hover_color = false,
-		_active_hover_color = false,
+		
+		_toggle = false,
+		_animation_speed = false,
 		
 		_hovering = false,
 		_click = false,
 		_click_right = false,
-		_clickprogress = 0,
-		_hoverprogress = 0,
+		_cursor = false,
 		
 		------------------------------
 		
 		_think = function(self, dt)
-			local anim_speed = self.animationSpeed
+			local anim_speed = dt * self.animationSpeed
 			
-			if self._hovering then
-				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + dt * anim_speed)
-					self:_changed(true)
-				end
-			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - dt * anim_speed)
-				self:_changed(true)
-			end
-			
-			if self._click or (not self._toggle and self._click_right) then
-				if self._clickprogress < 1 then
-					self._clickprogress = math.min(1, self._clickprogress + dt * anim_speed)
-					self:_changed(true)
-				end
-				
-				if self._click then
-					self:onHold()
-				end
-				if self.click_right then
-					self:onRightHold()
-				end
-			elseif self._clickprogress > 0 then
-				self._clickprogress = math.max(0, self._clickprogress - dt * anim_speed)
-				self:_changed(true)
-			end
+			self:_animationUpdate("hover", self._hovering, anim_speed)
+			self:_animationUpdate("click", self._click or self._click_right, anim_speed)
 		end,
 		
 		_press = function(self)
 			self._click = not self._toggle and true or not self._click
+			
+			local x, y = self._gui:getCursorPos(self)
+			self._cursor = Vector(x, y)
 			
 			self:onClick()
 		end,
 		
 		_pressRight = function(self)
 			self._click_right = true
+			
+			local x, y = self._gui:getCursorPos(self)
+			self._cursor = Vector(x, y)
 			
 			self:onRightClick()
 		end,
@@ -103,35 +90,34 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
-			local b = self.borderSize
-			local b2 = b * 2
+			-- Container
+			render.setMaterial()
 			
-			if b > 0 then
-				if self.borderAccentCorner then
-					render.setColor(self.accentColor)
-					render.drawRect(0, 0, w, h)
-					
-					render.setColor(self.secondaryColor)
-					render.drawRect(b, b, w - b, h - b)
-				else
-					render.setColor(self.secondaryColor)
-					render.drawRect(0, 0, w, h)
-					
-					render.setColor(self.accentColor)
-					render.drawRect(0, 0, w - b, h - b)
-				end
+			-- render.setColor(GUI.lerpColor(GUI.lerpColor(self.mainColor, self.hoverColor, self:getAnimation("hover")), self.activeColor, p))
+			local clr = GUI.lerpColor(self.mainColor, self.hoverColor, self:getAnimation("hover"))
+			render.setColor(clr)
+			render.drawRect(0, 0, w, h)
+			
+			-- Click anim
+			local p = self:getAnimation("click")
+			if p > 0 then
+				local w, h = math.max(w - self._cursor.x, self._cursor.x) + 1, math.max(h - self._cursor.y, self._cursor.y) + 1
+				local m = Matrix()
+				m:setTranslation(self._cursor)
+				m:setScale(Vector((self._click and p or 1) * math.sqrt(w * w + h * h) * 2))
+				
+				render.pushMatrix(m)
+				render.setColor(GUI.lerpColor(self.activeColor, clr, self._click and 0 or (1 - p)))
+				render.drawPoly(circle)
+				render.popMatrix()
 			end
 			
-			-- render.setColor((self.mainColor * (1 - self._hoverprogress) + self.hoverColor * self._hoverprogress) * (1 - self._clickprogress) + self.activeColor * self._clickprogress)
-			local hp = self._hoverprogress
-			local hp1 = 1 - self._hoverprogress
-			render.setColor((self.mainColor * hp1 + self.hoverColor * hp) * (1 - self._clickprogress) + (self.activeColor * hp1 + self.activeHoverColor * hp) * self._clickprogress)
-			render.drawRect(b, b, w - b2, h - b2)
-			
+			-- Text
 			local ax, ay = self._text_alignment_x, self._text_alignment_y
+			
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			render.drawText(ax == 0 and b or (ax == 1 and w / 2 or w - b), ay == 3 and b or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height - b), self.text, ax)
+			render.drawText(ax == 0 and 0 or (ax == 1 and w / 2 or w), ay == 3 and 0 or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height), self.text, ax)
 		end,
 		
 		onClick = function(self) end,
@@ -149,6 +135,47 @@ return {
 	----------------------------------------
 	
 	properties = {
+		mainColor = {
+			set = function(self, color)
+				self._main_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._main_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.secondaryColor
+			end
+		},
+		
+		activeColor = {
+			set = function(self, color)
+				self._active_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._active_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.secondaryColorDark
+			end
+		},
+		
+		hoverColor = {
+			set = function(self, color)
+				self._hover_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._hover_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.secondaryColorLight
+			end
+		},
+		
+		------------------------------
+		
 		toggle = {
 			set = function(self, state)
 				self._toggle = state
@@ -169,45 +196,16 @@ return {
 			end
 		},
 		
-		activeColor = {
-			set = function(self, color)
-				self._active_color = color
-				
-				self:_changed(true)
-			end,
-			
-			get = function(self)
-				return self._active_color or self._theme.activeColor
-			end
-		},
-		
-		hoverColor = {
-			set = function(self, color)
-				self._hover_color = color
-				
-				self:_changed(true)
-			end,
-			
-			get = function(self)
-				return self._hover_color or self._theme.hoverColor
-			end
-		},
-		
-		activeHoverColor = {
-			set = function(self, color)
-				self._active_hover_color = color
-				
-				self:_changed(true)
-			end,
-			
-			get = function(self)
-				return self._active_hover_color or self._theme.activeHoverColor
-			end
-		},
-		
 		------------------------------
 		
 		state = {
+			set = function(self, state)
+				if self._toggle then
+					self._click = state
+					self._cursor = Vector(self._w / 2, self._h / 2)
+				end
+			end,
+			
 			get = function(self)
 				return self._click
 			end

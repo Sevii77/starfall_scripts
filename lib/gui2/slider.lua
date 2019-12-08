@@ -4,227 +4,151 @@ for i = 1, 32 do
 	circle[i] = {x = -math.sin(rad) / 2, y = math.cos(rad) / 2}
 end
 
-local circle_half = {}
-for i = 0, 16 do
-	local rad = i / 16 * math.pi
-	circle_half[i + 1] = {x = -math.sin(rad) / 2, y = math.cos(rad) / 2}
-end
-
-local styles = {
-	{
-		think = function(self, dt, cx, cy)
-			local anim_speed = self.animationSpeed
-			
-			if self._hovering then
-				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + dt * anim_speed)
-					self:_changed(true)
-				end
-			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - dt * anim_speed)
-				self:_changed(true)
-			end
-			
-			if self._holding then
-				if self._holdprogress < 1 then
-					self._holdprogress = math.min(1, self._holdprogress + dt * anim_speed)
-					self:_changed(true)
-				end
-				
-				if cx then
-					local last = self._progress
-					local progress = math.clamp((cx - self._h / 2) / (self._w - self._h), 0, 1)
-					self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
-					self._progress = (self._value - self._min) / (self._max - self._min)
-					
-					if self._progress ~= last then
-						self:onChange(self._value)
-						self:_changed(true)
-					end
-				end
-				
-				self:onHold()
-			elseif self._holdprogress > 0 then
-				self._holdprogress = math.max(0, self._holdprogress - dt * anim_speed)
-				self:_changed(true)
-			end
-		end,
-		draw = function(self, w, h)
-			local bh = self.barSize
-			local x = h / 2 - bh / 2
-			local y = x
-			local bw = w - x * 2
-			local b = self.borderSize
-			local b2 = b * 2
-			local bb = self.barBorderSize
-			local bb2 = bb * 2
-			
-			render.setMaterial()
-			
-			if b > 0 then
-				if self.borderAccentCorner then
-					render.setColor(self.accentColor)
-					render.drawRect(x, y, bw, bh)
-					
-					render.setColor(self.secondaryColor)
-					render.drawRect(x + bb, y + bb, bw - bb, bh - bb)
-				else
-					render.setColor(self.secondaryColor)
-					render.drawRect(x, y, bw, bh)
-					
-					render.setColor(self.accentColor)
-					render.drawRect(x, y, bw - bb, bh - bb)
-				end
-			end
-			
-			-- Bar
-			render.setColor(self.activeColor)
-			render.drawRect(x + bb, y + bb, bw - bb2, bh - bb2)
-			
-			render.setColor(self.mainColor)
-			render.drawRect(x + bb + (bw - bb2) * self._progress, y + bb, (bw - bb2) * (1 - self._progress), bh - bb2)
-			
-			-- Knob
-			local m = Matrix()
-			m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
-			m:setScale(Vector(h, h))
-			
-			render.pushMatrix(m, true)
-			render.setColor(self.accentColor)
-			render.drawPoly(circle)
-			render.popMatrix()
-			
-			-- m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
-			-- m:setScale(Vector(h - b2, h - b2) * (1 - self._holdprogress))
-			-- render.pushMatrix(m, true)
-			-- render.setColor(self.mainColor * (1 - self._hoverprogress) + self.secondaryColor * self._hoverprogress)
-			-- render.drawPoly(circle)
-			-- render.popMatrix()
-			
-			m:setTranslation(Vector((w - h) * self._progress + h / 2, h / 2))
-			
-			local hp = self._hoverprogress
-			local hp1 = 1 - self._hoverprogress
-			if self._holdprogress > 0 then
-				m:setScale(Vector(h - b2, h - b2))
-				render.pushMatrix(m, true)
-				render.setColor(self.activeColor * hp1 + self.activeHoverColor * hp)
-				render.drawPoly(circle)
-				render.popMatrix()
-			end
-			
-			if self._holdprogress < 1 then
-				m:setScale(Vector(h - b2, h - b2) * (1 - self._holdprogress))
-				render.pushMatrix(m, true)
-				render.setColor(self.mainColor * hp1 + self.hoverColor * hp)
-				render.drawPoly(circle)
-				render.popMatrix()
-			end
-		end,
-	},
-	
-	
-	{
-		think = function(self, dt, cx, cy)
-			local anim_speed = self.animationSpeed
-			
-			if self._hovering then
-				if self._hoverprogress < 1 then
-					self._hoverprogress = math.min(1, self._hoverprogress + dt * anim_speed)
-					self:_changed(true)
-				end
-			elseif self._hoverprogress > 0 then
-				self._hoverprogress = math.max(0, self._hoverprogress - dt * anim_speed)
-				self:_changed(true)
-			end
-			
-			if self._holding then
-				if self._holdprogress < 1 then
-					self._holdprogress = math.min(1, self._holdprogress + dt * anim_speed)
-					self:_changed(true)
-				end
-				
-				if cx then
-					local last = self._progress
-					local progress = math.clamp(cx / self._w, 0, 1)
-					self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
-					self._progress = (self._value - self._min) / (self._max - self._min)
-					
-					if self._progress ~= last then
-						self:onChange(self._value)
-						self:_changed(true)
-					end
-				end
-				
-				self:onHold()
-			elseif self._holdprogress > 0 then
-				self._holdprogress = math.max(0, self._holdprogress - timer.frametime() * anim_speed)
-				self:_changed(true)
-			end
-		end,
-		draw = function(self, w, h)
-			local b = self.borderSize
-			local b2 = b * 2
-			
-			if b > 0 then
-				if self.borderAccentCorner then
-					render.setColor(self.accentColor)
-					render.drawRect(0, 0, w, h)
-					
-					render.setColor(self.secondaryColor)
-					render.drawRect(b, b, w - b, h - b)
-				else
-					render.setColor(self.secondaryColor)
-					render.drawRect(0, 0, w, h)
-					
-					render.setColor(self.accentColor)
-					render.drawRect(0, 0, w - b, h - b)
-				end
-			end
-			
-			local hp = self._hoverprogress
-			local hp1 = 1 - self._hoverprogress
-			
-			render.setColor(self.activeColor * hp1 + self.activeHoverColor * hp)
-			render.drawRect(b, b, w - b2, h - b2)
-			
-			render.setColor(self.mainColor * hp1 + self.hoverColor * hp)
-			render.drawRect(b + (w - b2) * self._progress, b, (w - b2) * (1 - self._progress), h - b2)
-			
-			render.setFont(self.font)
-			render.setColor(self.textColor)
-			render.drawSimpleText(w / 2, h / 2, tostring(self._value), 1, 1)
-		end
-	}
-}
 
 return {
-	inherit = "container",
+	inherit = "label",
 	constructor = function(self)
 		self.style = 1
+		
+		self:_setTextHeight()
 	end,
 	
 	----------------------------------------
 	
 	data = {
-		_value = 0,
-		_font = false,
-		_text_color = false,
-		_bar_size = false,
-		_bar_border_size = false,
-		_animation_speed = false,
+		_background_color = false,
 		_active_color = false,
 		_hover_color = false,
-		_active_hover_color = false,
+		
+		_draw_background = false,
+		_animation_speed = false,
 		_min = 0,
 		_max = 1,
 		_round = 2,
-		_style_index = 0,
+		_bar_size = 4,
 		
-		_holding = false,
+		_value = 0,
 		_progress = 0,
-		_hoverprogress = 0,
-		_holdprogress = 0,
+		_holding = false,
+		
+		------------------------------
+		
+		_styles = {
+			{
+				_think = function(self, dt, cx, cy)
+					local anim_speed = dt * self.animationSpeed
+					
+					self:_animationUpdate("hover", self._hovering, anim_speed)
+					self:_animationUpdate("hold", self._holding, anim_speed)
+					
+					if self._holding then
+						if cx then
+							local last = self._progress
+							local progress = math.clamp((cx - self._h / 2) / (self._w - self._h), 0, 1)
+							self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
+							self._progress = (self._value - self._min) / (self._max - self._min)
+							
+							if self._progress ~= last then
+								self:onChange(self._value)
+								self:_changed(true)
+							end
+						end
+						
+						self:onHold()
+					end
+				end,
+				
+				onDraw = function(self, w, h)
+					render.setMaterial()
+					
+					-- Background
+					if self._draw_background then
+						render.setColor(self.backgroundColor)
+						render.drawRect(0, 0, w, h)
+					end
+					
+					-- Bar
+					local p = self._progress
+					local bh = self._bar_size
+					local bw = w - h + bh
+					local bo = (h - bh) / 2
+					
+					render.setColor(self.activeColor)
+					render.drawRect(bo, bo, bw * p, bh)
+					
+					render.setColor(self.mainColor)
+					render.drawRect(bo + bw * p, bo, bw * (1 - p), bh)
+					
+					-- Knob
+					local m = Matrix()
+					m:setTranslation(Vector((w - h) * p + h / 2, h / 2))
+					m:setScale(Vector(h))
+					render.pushMatrix(m)
+					render.setColor(GUI.lerpColor(self.activeColor, self.hoverColor, self:getAnimation("hover")))
+					render.drawPoly(circle)
+					render.popMatrix()
+				end,
+			},
+			
+			
+			{
+				_think = function(self, dt, cx, cy)
+					local anim_speed = dt * self.animationSpeed
+					
+					self:_animationUpdate("hover", self._hovering, anim_speed)
+					self:_animationUpdate("hold", self._holding, anim_speed)
+					
+					if self._holding then
+						if cx then
+							local last = self._progress
+							local progress = math.clamp(cx / self._w, 0, 1)
+							self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
+							self._progress = (self._value - self._min) / (self._max - self._min)
+							
+							if self._progress ~= last then
+								self:onChange(self._value)
+								self:_changed(true)
+							end
+						end
+						
+						self:onHold()
+					end
+				end,
+				
+				onDraw = function(self, w, h)
+					render.setMaterial()
+					
+					-- Bar
+					local p = self._progress
+					local hover = self:getAnimation("hover")
+					local hcp = math.min(0.1, hover * 0.2)
+					local clr = GUI.lerpColor(self.activeColor, self.hoverColor, hover)
+					
+					if hover > 0 then
+						render.setColor(clr)
+						render.drawRect(w * p, 0, w * (1 - p), h)
+					end
+					
+					local m = Matrix()
+					m:setTranslation(Vector(hcp * 0.5 * h))
+					m:setScale(Vector(1 - hcp * (h / w), 1 - hcp))
+					render.pushMatrix(m)
+					render.setColor(self.mainColor)
+					render.drawPoly(self._mask_poly)
+					render.popMatrix()
+					
+					render.setColor(clr)
+					render.drawRect(0, 0, w * p, h)
+					
+					-- Text
+					local ax, ay = self._text_alignment_x, self._text_alignment_y
+					
+					render.setFont(self.font)
+					render.setColor(self.textColor)
+					render.drawText(ax == 0 and 0 or (ax == 1 and w / 2 or w), ay == 3 and 0 or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height), tostring(self._value), ax)
+				end
+			}
+		},
 		
 		------------------------------
 		
@@ -280,67 +204,29 @@ return {
 	----------------------------------------
 	
 	properties = {
-		font = {
-			set = function(self, font)
-				self._font = font
-				
-				self:_changed(true)
-				
-				if self._text_wrap then
-					self:_wrapText()
-				else
-					self:_setTextHeight()
-				end
-			end,
-			
-			get = function(self)
-				return self._font or self._theme.font
-			end
-		},
-		
-		textColor = {
+		mainColor = {
 			set = function(self, color)
-				self._text_color = color
+				self._main_color = color
 				
 				self:_changed(true)
 			end,
 			
 			get = function(self)
-				return self._text_color or self._theme.textColor
+				local clr = self._main_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryColorLight
 			end
 		},
 		
-		barSize = {
-			set = function(self, value)
-				self._bar_size = value
+		backgroundColor = {
+			set = function(self, color)
+				self._main_color = color
 				
 				self:_changed(true)
 			end,
 			
 			get = function(self)
-				return self._bar_size or self._theme.barSize
-			end
-		},
-		
-		barBorderSize = {
-			set = function(self, value)
-				self._bar_border_size = value
-				
-				self:_changed(true)
-			end,
-			
-			get = function(self)
-				return self._bar_border_size or self._theme.barBorderSize
-			end
-		},
-		
-		animationSpeed = {
-			set = function(self, value)
-				self._animation_speed = value
-			end,
-			
-			get = function(self)
-				return self._animation_speed or self._theme.animationSpeed
+				local clr = self._background_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryColorDark
 			end
 		},
 		
@@ -352,7 +238,8 @@ return {
 			end,
 			
 			get = function(self)
-				return self._active_color or self._theme.activeColor
+				local clr = self._active_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.secondaryColor
 			end
 		},
 		
@@ -364,19 +251,30 @@ return {
 			end,
 			
 			get = function(self)
-				return self._hover_color or self._theme.hoverColor
+				local clr = self._hover_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.secondaryColorLight
 			end
 		},
 		
-		activeHoverColor = {
-			set = function(self, color)
-				self._active_hover_color = color
-				
-				self:_changed(true)
+		------------------------------
+		
+		drawBackground = {
+			set = function(self, state)
+				self._draw_background = state
 			end,
 			
 			get = function(self)
-				return self._active_hover_color or self._theme.activeHoverColor
+				return self._draw_background
+			end
+		},
+		
+		animationSpeed = {
+			set = function(self, value)
+				self._animation_speed = value
+			end,
+			
+			get = function(self)
+				return self._animation_speed or self._theme.animationSpeed
 			end
 		},
 		
@@ -429,23 +327,15 @@ return {
 			end
 		},
 		
-		------------------------------
-		
-		style = {
-			set = function(self, index)
-				if not styles[index] then
-					error(index .. " is out of range of valid styles", 3)
-				end
-				
-				self._style_index = index
-				self.onDraw = styles[index].draw
-				self._think = styles[index].think
+		barSize = {
+			set = function(self, value)
+				self._bar_size = value
 				
 				self:_changed(true)
 			end,
 			
 			get = function(self)
-				return self._style_index
+				return self._bar_size
 			end
 		},
 		

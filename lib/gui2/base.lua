@@ -20,6 +20,8 @@ return {
 		_size = true,
 		_w = 0,
 		_h = 0,
+		_ow = 0,
+		_oh = 0,
 		
 		------------------------------
 		
@@ -45,6 +47,48 @@ return {
 		
 		_posChanged = function(self)
 			-- Called by base, can be overwritten so you dont have to overwrite all 3 pos properties
+		end,
+		
+		------------------------------
+		-- Styles
+		
+		_styles = {},
+		_style_index = 0,
+		
+		addStyle = function(self, style)
+			table.insert(self._styles, style)
+		end,
+		
+		------------------------------
+		--- Animations
+		
+		_animations = {},
+		
+		getAnimation = function(self, name)
+			return self._animations[name] or 0
+		end,
+		
+		_animationUpdate = function(self, name, state, amount)
+			local anim = self._animations[name] or 0
+			local changed = false
+			
+			if state then
+				if anim < 1 then
+					anim = math.min(1, anim + amount)
+					changed = true
+					
+					self:_changed()
+				end
+			elseif anim > 0 then
+				anim = math.max(0, anim - amount)
+				changed = true
+				
+				self:_changed()
+			end
+			
+			self._animations[name] = anim
+			
+			return changed, anim
 		end,
 		
 		------------------------------
@@ -123,6 +167,9 @@ return {
 						child:_posChanged()
 						child:_changed()
 					end
+					
+					w = math.max(child._ow, w)
+					h = math.max(child._oh, h)
 					
 					-- For some reason w and ow are always the same? i dont understand
 					--if w ~= ow or h ~= oh then
@@ -324,10 +371,14 @@ return {
 					self._size.y = h
 					self._w = w
 					self._h = h
+					self._ow = w
+					self._oh = h
 				else
 					self._size = w
 					self._w = w.x
 					self._h = w.y
+					self._ow = w.x
+					self._oh = w.y
 				end
 				
 				self:_sizeChanged()
@@ -344,6 +395,7 @@ return {
 			set = function(self, w)
 				self._size.x = w
 				self._w = w
+				self._ow = w
 				
 				self:_sizeChanged()
 				self:_updateDockingParent()
@@ -359,6 +411,7 @@ return {
 			set = function(self, h)
 				self._size.y = h
 				self._h = h
+				self._oh = h
 				
 				self:_sizeChanged()
 				self:_updateDockingParent()
@@ -367,6 +420,24 @@ return {
 			
 			get = function(self)
 				return self._h
+			end
+		},
+		
+		------------------------------
+		
+		style = {
+			set = function(self, style_id)
+				self._style_index = style_id
+				
+				for k, v in pairs(self._styles[style_id]) do
+					self[k] = v
+				end
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._style_index
 			end
 		},
 		

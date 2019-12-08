@@ -7,8 +7,8 @@
 	have a more advanced changed system:
 		if an element has changed in a minor way (changed something within the same bounds)
 		make it only redraw the element itself and not the whole gui
-	docking
 	more elements
+	mask stacking
 ]]
 
 local class, checktype = unpack(require("./class.lua"))
@@ -180,49 +180,49 @@ local cursor = { --[[32x32]]
 
 local themes = {
 	light = {
-		mainColor = Color(220, 220, 220),
-		secondaryColor = Color(180, 180, 180),
-		accentColor = Color(50, 255, 180),
-		activeColor = Color(50, 255, 180),
-		hoverColor = Color(180, 180, 180),
-		activeHoverColor = Color(50, 255, 180) * 0.8,
-		textColor = Color(30, 30, 30),
+		primaryColor        = Color(190, 190, 190),
+		primaryColorLight   = Color(240, 240, 240),
+		primaryColorDark    = Color(160, 160, 160),
+		primaryTextColor    = Color(15, 15, 15),
 		
-		borderSize = 1,
-		borderAccentCorner = true,
-		barSize = 4,
-		barBorderSize = 1,
-		animationSpeed = 20,
+		secondaryColor      = Color(50, 110, 210),
+		secondaryColorLight = Color(80, 140, 255),
+		secondaryColorDark  = Color(20, 80, 160),
+		secondaryTextColor  = Color(90, 90, 90),
 		
-		font = render.createFont("Roboto", 18, 600),
+		font = render.createFont("Trebuchet", 18, 350, true),
 		
-		cursorMainColor = Color(220, 220, 220),
-		cursorOutlineColor = Color(30, 30, 30),
-		cursorSize = 12,
-		cursorRender = cursor
+		cornerStyle           = 1,
+		cornerSize            = 5,
+		animationSpeed        = 8,
+		
+		cursorMainColor       = Color(220, 220, 220),
+		cursorOutlineColor    = Color(30, 30, 30),
+		cursorSize            = 12,
+		cursorRender          = cursor
 	},
 	
 	dark = {
-		mainColor = Color(50, 50, 50),
-		secondaryColor = Color(90, 90, 90),
-		accentColor = Color(50, 255, 180),
-		activeColor = Color(50, 255, 180),
-		hoverColor = Color(90, 90, 90),
-		activeHoverColor = Color(50, 255, 180) * 0.8,
-		textColor = Color(255, 255, 255),
+		primaryColor        = Color(40, 40, 40),
+		primaryColorLight   = Color(50, 50, 50),
+		primaryColorDark    = Color(30, 30, 30),
+		primaryTextColor    = Color(255, 255, 255),
 		
-		borderSize = 1,
-		borderAccentCorner = true,
-		barSize = 4,
-		barBorderSize = 1,
-		animationSpeed = 20,
+		secondaryColor      = Color(50, 110, 210),
+		secondaryColorLight = Color(80, 140, 255),
+		secondaryColorDark  = Color(20, 80, 160),
+		secondaryTextColor  = Color(160, 160, 160),
 		
-		font = render.createFont("Roboto", 18, 600),
+		font = render.createFont("Trebuchet", 18, 350, true),
 		
-		cursorMainColor = Color(30, 30, 30),
-		cursorOutlineColor = Color(220, 220, 220),
-		cursorSize = 12,
-		cursorRender = cursor
+		cornerStyle           = 1,
+		cornerSize            = 5,
+		animationSpeed        = 8,
+		
+		cursorMainColor       = Color(30, 30, 30),
+		cursorOutlineColor    = Color(220, 220, 220),
+		cursorSize            = 12,
+		cursorRender          = cursor
 	}
 }
 
@@ -392,45 +392,68 @@ GUI = class {
 			if self._redraw_all then
 				local deltatime = self._deltatime
 				local sx, sy = 1024 / self._w, 1024 / self._h
+				local s = Vector(sx, sy)
 				
-				local function draw(object)
+				local function draw(object, masks)
 					local obj = object.object
 					if not obj._enabled then return end
 					
 					local b = object.global_bounding
+					-- local masks = table.copy(masks)
+					-- local crm = obj._customRenderMask
+					-- if crm then
+					-- 	table.insert(masks, function()
+					-- 		local m = Matrix()
+					-- 		m:setTranslation(Vector(b.x, b.y))
+							
+					-- 		render.pushMatrix(m, true)
+					-- 		crm(obj, obj._w, obj._h)
+					-- 		render.popMatrix()
+					-- 	end)
+					-- end
+					
+					-- if #masks > 0 then
+					-- 	stencil.pushMask(function()
+					-- 		for i, mask in pairs(masks) do
+					-- 			mask()
+					-- 		end
+					-- 	end, not obj._invert_render_mask)
+					-- end
 					
 					local m = Matrix()
-					m:setTranslation(obj._pos)
-					render.pushMatrix(m)
+					m:setTranslation(Vector(b.x, b.y))
 					
 					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
+					render.pushMatrix(m)
 					
 					local crm = obj._customRenderMask
 					if crm then
-						stencil.pushMask(function() crm(obj, obj._w, obj._h) end, not obj._invert_render_mask)
+						stencil.pushMask(function()
+							crm(obj, obj._w, obj._h)
+						end, not obj._invert_render_mask)
 					end
 					
 					obj:_draw(deltatime)
+					render.popMatrix()
 					render.disableScissorRect()
-					for i = #object.order, 1, -1 do
-						draw(object.children[object.order[i]])
-					end
 					
 					if crm then
 						stencil.popMask()
 					end
 					
-					render.popMatrix()
+					for i = #object.order, 1, -1 do
+						draw(object.children[object.order[i]], masks)
+					end
 				end
 				
 				local m = Matrix()
-				m:setScale(Vector(sx, sy))
+				m:setScale(s)
 				render.pushMatrix(m, true)
 				
 				render.selectRenderTarget(self._rtid)
 				render.clear(clearcolor)
 				for i = #self._render_order, 1, -1 do
-					draw(self._objects[self._render_order[i]])
+					draw(self._objects[self._render_order[i]], {})
 				end
 				render.selectRenderTarget()
 				
@@ -611,9 +634,7 @@ GUI = class {
 					local b = object.global_bounding
 					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
 						local cim = obj._customInputMask
-						if cim and not cim(obj, object.cursor.x, object.cursor.y) then
-							return
-						end
+						if cim and not cim(obj, object.cursor.x, object.cursor.y) then return end
 						
 						local hover
 						if not obj._translucent then
@@ -855,6 +876,12 @@ GUI = class {
 		},
 		
 		------------------------------
+		-- Simple functions
+		lerpColor = function(clr1, clr2, progress)
+			return clr1 * (1 - progress) + clr2 * progress
+		end,
+		
+		------------------------------
 		
 		registerElement = function(name, data)
 			if GUI.elements[name] then
@@ -869,42 +896,29 @@ GUI = class {
 			data.inherit = nil
 			data.constructor = function() end
 			
-			-- Generate methods
-			for k, v in pairs(data.properties) do
-				if type(v) == "table" and v.set then
-					data.data["set" .. string.upper(k[1]) .. string.sub(k, 2)] = v.set
-				end
-				
-				if type(v) == "table" and v.get then
-					data.data["get" .. string.upper(k[1]) .. string.sub(k, 2)] = v.get
-				end
-			end
-			
 			-- Apply inherit
 			if inherit then
 				local i = GUI.elements[inherit].raw
 				
 				-- Main inherit stuff
 				for k, v in pairs(i.data) do
-					local t = type(v) == "table"
 					if not data.data[k] then
-						data.data[k] = t and table.copy(v) or v
+						data.data[k] = type(v) == "table" and table.copy(v) or v
 					end
 				end
 				
 				for k, v in pairs(i.properties) do
 					if not data.properties[k] then
-						local t = type(v) == "table"
-						data.properties[k] = t and table.copy(v) or v
+						data.properties[k] = type(v) == "table" and table.copy(v) or v
 					end
 					
-					if t and v.set then
-						base["set" .. string.upper(k[1]) .. string.sub(k, 2)] = v.set
-					end
+					-- if t and v.set then
+					-- 	base["set" .. string.upper(k[1]) .. string.sub(k, 2)] = v.set
+					-- end
 					
-					if t and v.get then
-						base["get" .. string.upper(k[1]) .. string.sub(k, 2)] = v.get
-					end
+					-- if t and v.get then
+					-- 	base["get" .. string.upper(k[1]) .. string.sub(k, 2)] = v.get
+					-- end
 				end
 				
 				-- Add base to data functions
@@ -916,15 +930,29 @@ GUI = class {
 						data.data[k] = function(self, ...)
 							local vals = {...}
 							
-							self.base = function()
-								func_i(self, unpack(vals))
+							local old_base = _G.base
+							_G.base = function()
+								return func_i(self, unpack(vals))
 							end
 							
-							func(self, ...)
+							local a, b, c, d, e, f, g, h = func(self, ...)
 							
-							self.base = nil
+							_G.base = old_base
+							
+							return a, b, c, d, e, f, g, h
 						end
 					end
+				end
+			end
+			
+			-- Generate methods
+			for k, v in pairs(data.properties) do
+				if type(v) == "table" and v.set then
+					data.data["set" .. string.upper(k[1]) .. string.sub(k, 2)] = v.set
+				end
+				
+				if type(v) == "table" and v.get then
+					data.data["get" .. string.upper(k[1]) .. string.sub(k, 2)] = v.get
 				end
 			end
 			
@@ -966,6 +994,8 @@ local function doElement(name)
 	end
 end
 
+local old_GUI = _G.GUI
+_G.GUI = GUI
 while table.count(elements_raw) > 0 do
 	for name, _ in pairs(elements_raw) do
 		doElement(name)
@@ -973,6 +1003,7 @@ while table.count(elements_raw) > 0 do
 		break
 	end
 end
+_G.GUI = old_GUI
 
 ----------------------------------------
 

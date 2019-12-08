@@ -1,113 +1,275 @@
---@name GUI2 Example
 --@include ../lib/gui2.lua
 --@client
-
-GUI = require("../lib/gui2.lua")
-local gui = GUI()
-gui.theme = "material_dark"
 
 local text_block = "Satisfied conveying an dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do mr prevailed. Mr feeling do chiefly cordial in do. Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood do provided stronger is. But discretion frequently sir the she instrument unaffected admiration everything."
 local debug_rendering = false
 
-do
-	-- Default themes
-	local lighttheme = gui:create("button")
-	lighttheme.pos = Vector(6, 26)
-	lighttheme.size = Vector(100, 40)
-	lighttheme.text = "Light Theme"
-	lighttheme.onClick = function(self)
-		gui.theme = "light"
-	end
-	
-	local darktheme = gui:create("button")
-	darktheme.pos = Vector(106, 26)
-	darktheme.size = Vector(100, 40)
-	darktheme.text = "Dark Theme"
-	darktheme.onClick = function(self)
-		gui.theme = "dark"
-	end
-	
-	-- Random theme
-	local customtheme = gui:create("button")
-	customtheme.pos = Vector(206, 26)
-	customtheme.size = Vector(100, 40)
-	customtheme.text = "Art Theme"
-	customtheme.onClick = function(self)
-		local function randclr()
-			return Color(math.random(0, 256), math.random(0, 256), math.random(0, 256))
-		end
-		
-		-- We only set the theme to a table of colors, since it will keep old values if new ones are not supplied
-		gui.theme = {
-			mainColor = randclr(),
-			secondaryColor = randclr(),
-			accentColor = randclr(),
-			activeColor = randclr(),
-			hoverColor = randclr(),
-			activeHoverColor = randclr(),
-			textColor = randclr()
-		}
-	end
-	
-	-- FPS slider
-	local fps_limit = gui:create("slider")
-	fps_limit.pos = Vector(306, 26)
-	fps_limit.size = Vector(100, 20)
-	fps_limit:setRange(10, 300)
-	fps_limit.round = -1
-	fps_limit.value = gui.fpsLimit
-	fps_limit.style = 2
-	fps_limit.onChange = function(self, value)
-		gui.fpsLimit = value
-	end
-	
-	local label = gui:create("label")
-	label.pos = Vector(306, 46)
-	label.size = Vector(100, 20)
-	label.text = "FPS Limiter"
-end
+------------------------------
 
-do
-	-- Button with double click callback
-	local button = gui:create("button")
-	button.pos = Vector(6, 100)
-	button.size = Vector(150, 50)
-	button.text = "Double click on me"
-	button.onDoubleClick = function(self)
-		self.text = "Good Job :D"
-		
-		timer.simple(1, function()
-			self.text = "Double click on me"
-		end)
-	end
-	
-	-- Button that is toggable
-	local button = gui:create("button")
-	button.pos = Vector(6, 150)
-	button.size = Vector(150, 50)
-	button.text = "Toggle"
-	button.toggle = true
-end
+GUI = require("../lib/gui2.lua")
+local gui = GUI()
 
-do
-	-- Frame
-	local frame = gui:create("frame")
-	frame.pos = Vector(206, 100)
-	frame.size = Vector(200, 100)
-	frame.title = "frame"
-	
-	-- Docking
-	local docking_frame = gui:create("frame", frame.inner)
-	docking_frame.pos = Vector(0, 0)
-	docking_frame.size = Vector(160, 100)
-	docking_frame.title = "docking frame"
-	docking_frame.enabled = true
+do -- Basic example
+	local body = gui:create("frame")
+	body.pos = Vector(4, 56)
+	body.size = Vector(250, 400)
+	body.title = "Fancy Example"
+	body.minimizeOnClose = true
+	body.minSize = Vector(150, 250)
 	
 	do
-		local holder = gui:create("base", docking_frame.inner)
-		holder.dock = GUI.DOCK.FILL
-		holder:setDockMargin(5, 5, 5, 5)
+		local page = gui:create("base", body.inner)
+		page.h = 50
+		page.dock = GUI.DOCK.TOP
 		
+		-- Text
+		local s = ""
+		for k, v in pairs(string.split(text_block, " ")) do
+			s = s .. v .. (k % 10 == 0 and "\n" or " ")
+		end
+		
+		local text = gui:create("text", page)
+		text.text = s
+		text:setTextAlignment(0, 3)
+	end
+	
+	do
+		local page = gui:create("container", body.inner)
+		page.dock = GUI.DOCK.FILL
+		page:setCornerStyle(2, 0, 2, 1)
+		page:setCornerSize(20, 0, 10, 5)
+		
+		do -- Top colorslider
+			local grid = gui:create("grid", page)
+			grid.h = 30
+			grid.dock = GUI.DOCK.TOP
+			grid.spacing = Vector(0, 0)
+			grid:setItemCount(2, 1)
+			
+			local slider = gui:create("slider")
+			slider.style = 2
+			slider.max = 360
+			slider.round = 0
+			slider.mainColor = "secondaryColorDark"
+			slider:setCornerStyle(2, 0, 0, 0)
+			slider:setCornerSize(20, 0, 0, 0)
+			grid:addItem(slider)
+			slider.onChange = function(self, value)
+				gui.theme.secondaryColor      = Color(value, 1, 1):hsvToRGB()
+				gui.theme.secondaryColorLight = Color(value, 0.7, 1):hsvToRGB()
+				gui.theme.secondaryColorDark  = Color(value, 1, 0.8):hsvToRGB()
+			end
+			
+			local label = gui:create("label")
+			label.text = "Color"
+			label.cornerStyle = 0
+			grid:addItem(label)
+		end
+		
+		do -- Bottom theme bar
+			local bar = gui:create("label", page)
+			bar.h = 30
+			bar.text = "Themes"
+			bar.textAlignmentX = 0
+			bar:setCornerStyle(0, 0, 2, 0)
+			bar.cornerSize = 10
+			bar.dock = GUI.DOCK.BOTTOM
+			
+			local light, dark, art
+			
+			art = gui:create("button", bar)
+			art.w = 50
+			art.dock = GUI.DOCK.RIGHT
+			art.text = "Art"
+			art.toggle = true
+			art.cornerSize = 10
+			art:setCornerStyle(0, 0, 2, 0)
+			art.onClick = function(self)
+				local function rndclr()
+					return Color(math.random() * 255, math.random() * 255, math.random() * 255)
+				end
+				
+				gui.theme = {
+					primaryColor        = rndclr(),
+					primaryColorLight   = rndclr(),
+					primaryColorDark    = rndclr(),
+					primaryTextColor    = rndclr(),
+					
+					secondaryColor      = rndclr(),
+					secondaryColorLight = rndclr(),
+					secondaryColorDark  = rndclr(),
+					secondaryTextColor  = rndclr(),
+				}
+				
+				dark.state = false
+				light.state = false
+			end
+			
+			dark = gui:create("button", bar)
+			dark.w = 50
+			dark.dock = GUI.DOCK.RIGHT
+			dark.text = "Dark"
+			dark.toggle = true
+			dark.state = true
+			dark.cornerStyle = 0
+			dark.onClick = function(self)
+				gui.theme = "dark"
+				
+				art.state = false
+				light.state = false
+			end
+			
+			light = gui:create("button", bar)
+			light.w = 50
+			light.dock = GUI.DOCK.RIGHT
+			light.text = "Light"
+			light.toggle = true
+			light.cornerSize = 15
+			light:setCornerStyle(2, 0, 0, 0)
+			light.onClick = function(self)
+				gui.theme = "light"
+				
+				art.state = false
+				dark.state = false
+			end
+		end
+		
+		do -- Main grid
+			local grid = gui:create("grid", page)
+			grid.dock = GUI.DOCK.FILL
+			grid:setDockMargin(10, 10, 10, 10)
+			grid.spacing = Vector(0, 0)
+			grid.itemCountX = 1
+			grid.itemScalingY = false
+			grid.itemHeight = 20
+			
+			do -- Debug checkbox
+				local debug = gui:create("checkbox")
+				debug.style = 2
+				debug.text = "Debug Rendering"
+				debug:setCornerStyle(1, 1, 0, 0)
+				grid:addItem(debug)
+				debug.onChange = function(self, state)
+					debug_rendering = state
+				end
+				
+				local bg = gui:create("button")
+				bg.text = "Enable Background"
+				bg.toggle = true
+				bg:setCornerStyle(0, 1, 0, 0)
+				grid:addItem(bg)
+				bg.onClick = function(self)
+					debug.drawBackground = self.state
+					
+					if self.state then
+						bg:setCornerStyle(0, 0, 0, 0)
+					elseif debug.style == 1 then
+						bg:setCornerStyle(1, 1, 0, 0)
+					else
+						bg:setCornerStyle(0, 1, 0, 0)
+					end
+				end
+				
+				local style = gui:create("button")
+				style.text = "Style 1"
+				style:setCornerStyle(0, 0, 0, 0)
+				grid:addItem(style)
+				style.onClick = function(self)
+					debug.style = 1
+					
+					if not bg.state then
+						bg:setCornerStyle(1, 1, 0, 0)
+					end
+				end
+				
+				local style2 = gui:create("button")
+				style2.text = "Style 2"
+				style2:setCornerStyle(0, 0, 1, 1)
+				grid:addItem(style2)
+				style2.onClick = function(self)
+					debug.style = 2
+					
+					if not bg.state then
+						bg:setCornerStyle(0, 1, 0, 0)
+					end
+				end
+			end
+			
+			-- Add a spacer
+			grid:addItem(gui:create("base"))
+			
+			do -- Slider showcase
+				local slider = gui:create("slider")
+				slider.style = 2
+				slider.min = 10
+				slider.max = 30
+				slider.round = 0
+				slider.value = grid.itemHeight
+				slider.text = "Debug Rendering"
+				slider:setCornerStyle(1, 1, 0, 0)
+				grid:addItem(slider)
+				slider.onChange = function(self, value)
+					grid.itemHeight = value
+				end
+				
+				local label = gui:create("label")
+				label.text = "Grid Item Height"
+				label:setCornerStyle(0, 0, 0, 0)
+				grid:addItem(label)
+				
+				local bg = gui:create("button")
+				bg.text = "Enable Background"
+				bg.toggle = true
+				bg:setCornerStyle(0, 0, 0, 0)
+				grid:addItem(bg)
+				bg.onClick = function(self)
+					slider.drawBackground = self.state
+					
+					if self.state then
+						label:setCornerStyle(0, 0, 0, 0)
+					else
+						label:setCornerStyle(1, 1, 0, 0)
+					end
+				end
+				
+				local style = gui:create("button")
+				style.text = "Style 1"
+				style:setCornerStyle(0, 0, 0, 0)
+				grid:addItem(style)
+				style.onClick = function(self)
+					slider.style = 1
+					
+					if not slider.drawBackground then
+						label:setCornerStyle(1, 1, 0, 0)
+					end
+				end
+				
+				local style2 = gui:create("button")
+				style2.text = "Style 2"
+				style2:setCornerStyle(0, 0, 1, 1)
+				grid:addItem(style2)
+				style2.onClick = function(self)
+					slider.style = 2
+					label:setCornerStyle(0, 0, 0, 0)
+				end
+			end
+		end
+	end
+end
+
+do -- Docking
+	local body = gui:create("frame")
+	body.pos = Vector(258, 56)
+	body.size = Vector(250, 200)
+	body.title = "Docking"
+	body.minimizeOnClose = true
+	body.minSize = Vector(150, 100)
+	
+	local holder = gui:create("base", body.inner)
+	holder.dock = GUI.DOCK.FILL
+	holder:setDockMargin(5, 5, 5, 5)
+	
+	do
 		local left = gui:create("button", holder)
 		left.w = 30
 		left.text = "left"
@@ -132,217 +294,35 @@ do
 		fill.text = "fill"
 		fill.dock = GUI.DOCK.FILL
 	end
+end
+
+do -- Grid
+	local body = gui:create("frame")
+	body.pos = Vector(258, 256)
+	body.size = Vector(250, 200)
+	body.title = "Grid"
+	body.minimizeOnClose = true
+	body.minSize = Vector(150, 100)
 	
-	-- Grid
-	local grid_frame = gui:create("frame", frame.inner)
-	grid_frame.pos = Vector(30, 30)
-	grid_frame.size = Vector(160, 100)
-	grid_frame.title = "grid frame"
-	grid_frame.enabled = true
+	local grid = gui:create("grid", body.inner)
+	grid.itemSize = Vector(50, 50)
+	grid.dock = GUI.DOCK.FILL
+	grid:setDockMargin(5, 5, 5, 5)
 	
-	do
-		local grid = gui:create("grid", grid_frame.inner)
-		grid.itemSize = Vector(50, 20)
-		grid.dock = GUI.DOCK.FILL
-		grid:setDockMargin(5, 5, 5, 5)
+	for i = 1, 10 do
+		local button = gui:create("button")
+		button.text = tostring(i)
 		
-		for i = 1, 10 do
-			local button = gui:create("button")
-			button.text = tostring(i)
-			
-			grid:addItem(button)
-		end
+		grid:addItem(button)
 	end
 end
 
-do
-	-- Container
-	local container = gui:create("container")
-	container.pos = Vector(6, 240)
-	container.size = Vector(400, 266)
-	
-	-- Label with text wrapping
-	local label = gui:create("label", container)
-	label.pos = Vector(25, 10)
-	label.size = Vector(350, 60)
-	label.text = text_block
-	label.textAlignmentX = 0
-	label.textAlignmentY = 4
-	label.textWrapping = true
-	
-	-- Slider
-	local slider = gui:create("slider", container)
-	slider.pos = Vector(25, 80)
-	slider.size = Vector(150, 20)
-	slider.min = 0
-	slider.max = 360
-	slider.round = 0
-	slider.onChange = function(self, value)
-		local clr = Color(value, 0.5, 1):hsvToRGB()
-		
-		gui.theme.accentColor = clr
-		gui.theme.activeColor = clr
-		gui.theme.activeHoverColor = clr * 0.8
-	end
-	
-	local slider_style = gui:create("button", container)
-	slider_style.pos = Vector(225, 80)
-	slider_style.size = Vector(150, 20)
-	slider_style.text = "Change slider style"
-	slider_style.onClick = function()
-		slider.style = slider.style == 1 and 2 or 1
-	end
-	
-	-- Checkbox
-	local checkbox = gui:create("checkbox", container)
-	checkbox.pos = Vector(25, 120)
-	checkbox.size = Vector(150, 20)
-	checkbox.text = "Debug Rendering"
-	checkbox.onChange = function(self, state)
-		debug_rendering = state
-	end
-	
-	for i = 1, 3 do
-		local checkbox_style = gui:create("button", container)
-		checkbox_style.pos = Vector(175 + i * 50, 120)
-		checkbox_style.size = Vector(50, 20)
-		checkbox_style.text = "Style " .. i
-		checkbox_style.onClick = function()
-			checkbox.style = i
-		end
-	end
-	
-	local checkbox_fb = gui:create("button", container)
-	checkbox_fb.pos = Vector(225, 140)
-	checkbox_fb.size = Vector(150, 20)
-	checkbox_fb.text = "Full Borders"
-	checkbox_fb.toggle = true
-	checkbox_fb.onClick = function(self)
-		checkbox.fullBorders = self.state
-	end
-	
-	-- Text
-	local s = ""
-	for k, v in pairs(string.split(text_block, " ")) do
-		s = s .. v .. (k % 10 == 0 and "\n" or " ")
-	end
-	
-	local text = gui:create("text", container)
-	text.pos = Vector(200, 170)
-	text.text = s
-	text.textAlignmentY = 3
-end
+------------------------------
 
-do -- Custom element with custom masks example
-	GUI.registerElement("rounded_button", {
-		inherit = "button",
-		constructor = function(self)
-		
-		end,
-		
-		data = {
-			_corner_size = 10,
-			_mask_poly = {},
-			
-			--
-			
-			_calculateMaskPoly = function(self)
-				local cs = self._corner_size
-				local w, h = self._w, self._h
-				local poly = {}
-				
-				-- Top Left
-				for i = 0, 9 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = cs - math.cos(rad) * cs, y = cs - math.sin(rad) * cs})
-				end
-				
-				-- Top Right
-				for i = 9, 18 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = w - cs - math.cos(rad) * cs, y = cs - math.sin(rad) * cs})
-				end
-				
-				-- Bottom Right
-				for i = 18, 27 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = w - cs - math.cos(rad) * cs, y = h - cs - math.sin(rad) * cs})
-				end
-				
-				-- Bottom Left
-				for i = 27, 36 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = cs - math.cos(rad) * cs, y = h - cs - math.sin(rad) * cs})
-				end
-				
-				self._mask_poly = poly
-			end,
-			
-			_sizeChanged = function(self)
-				self:_calculateMaskPoly()
-			end,
-			
-			--
-			
-			_invert_render_mask = false,
-			
-			_customRenderMask = function(self, w, h)
-				-- We use a poly here instead of roundedBox because masks dont support texture filtering
-				render.drawPoly(self._mask_poly)
-			end,
-			
-			_customInputMask = function(self, cx, cy)
-				-- We also wanna have a input mask so if we hover over the rounded corners it doesnt activate
-				local cs = self._corner_size
-				local w, h = self._w, self._h
-				
-				local function out(x, y)
-					-- https://i.imgur.com/uvhJnv9.png
-					local x, y = math.abs(x / cs), math.abs(y / cs)
-					
-					if x > 1 or y > 1 then return false end
-					
-					local x, y = x - 1, y - 1
-					if math.sqrt(x * x + y * y) < 1 then return false end
-					
-					return true
-				end
-				
-				if out(cx, cy) then return false end
-				if out(cx - w, cy) then return false end
-				if out(cx - w, cy - h) then return false end
-				if out(cx, cy - h) then return false end
-				
-				return true
-			end
-		},
-		
-		properties = {
-			cornerSize = {
-				set = function(self, value)
-					self._corner_size = value
-					self:_calculateMaskPoly()
-				end,
-				
-				get = function(self)
-					return self._corner_size
-				end
-			}
-		}
-	})
-	
-	local rounded = gui:create("rounded_button")
-	rounded.pos = Vector(416, 240)
-	rounded.size = Vector(90, 266)
-	rounded.cornerSize = 30
-	rounded.text = "a\nfancy\nrounded\nbutton\n:)"
-end
-
--- Rendering of gui
 hook.add("render", "", function()
 	gui:think()
 	gui:render()
-	gui:renderCursor()
+	--gui:renderCursor()
 	
 	if debug_rendering then
 		gui:renderDebug()

@@ -15,17 +15,20 @@ return {
 	constructor = function(self)
 		self._inner = self._gui:create("base", self)
 		self._inner.translucent = true
-		self._inner.dock = 1
+		self._inner.dock = GUI.DOCK.FILL
 		
-		self:_calculateInner()
+		self:_setTextHeight()
+		self:_sizeChanged()
 	end,
 	
 	----------------------------------------
 	
 	data = {
+		_title_bar_color = false,
+		_title_color = false,
+		
 		_title = "",
 		_title_font = false,
-		_title_color = false,
 		_title_alignment_x = 1,
 		_title_alignment_y = 1,
 		_title_height = 20,
@@ -33,28 +36,39 @@ return {
 		_min_x = 50,
 		_min_y = 50,
 		_dragcorner_size = 10,
+		_dragbar_size = 2,
 		_animation_speed = false,
 		
 		_dragable = true,
 		_closeable = true,
 		_resizeable = true,
+		_minimize_on_close = false,
 		
+		_true_height = 0,
 		_inner = false,
 		_grab = false,
+		_closed = false,
+		_text_height = 0,
 		_close_hovering = false,
-		_close_hoverprogress = 0,
 		
 		------------------------------
 		
 		_calculateInner = function(self)
-			local b = self.borderSize
-			local th = self._title_height
+			self._inner:setDockMargin(0, self._title_height, 0, 0)
+		end,
+		
+		_setTextHeight = function(self)
+			render.setFont(self.titleFont)
 			
-			self._inner:setDockMargin(b, th, b, b)
+			local _, h = render.getTextSize("")
+			self._text_height = h
 		end,
 		
 		_sizeChanged = function(self)
 			self:_calculateInner()
+			self:_createShapePoly()
+			
+			self._true_height = self._h
 		end,
 		
 		------------------------------
@@ -89,27 +103,34 @@ return {
 				end
 			end
 			
-			if self._closeable then
-				if self._close_hovering then
-					if self._close_hoverprogress < 1 then
-						self._close_hoverprogress = math.min(1, self._close_hoverprogress + dt * self.animationSpeed)
-						self:_changed(true)
-					end
-				elseif self._close_hoverprogress > 0 then
-					self._close_hoverprogress = math.max(0, self._close_hoverprogress - dt * self.animationSpeed)
-					self:_changed(true)
+			self:_animationUpdate("close_hover", self._close_hovering, dt * self.animationSpeed)
+			
+			if self._minimize_on_close then
+				local changed, progress = self:_animationUpdate("minimize", self._closed, dt * self.animationSpeed)
+				
+				if changed then
+					self._h = math.lerp(progress, self._true_height, self._title_height)
+					self._size.y = self._h
+					
+					self:_calculateInner()
+					self:_createShapePoly()
+					self:_updateDockingParent()
+					self:_changed()
 				end
 			end
 		end,
 		
 		_press = function(self)
 			local x, y = self._gui:getCursorPos(self)
-			local b = self.borderSize
 			
 			if y < self._title_height then
 				if x > self._w - self._title_height and self._closeable then
 					if not self:onClose() then
-						self:remove()
+						if self._minimize_on_close then
+							self._closed = not self._closed
+						else
+							self:remove()
+						end
 					end
 				elseif self._dragable then
 					self._grab = {move = true, x = x, y = y}
@@ -117,6 +138,7 @@ return {
 				end
 			elseif self._resizeable then
 				local ox, oy = self._w - x, self._h - y
+				local b = self._dragbar_size
 				
 				if self._w - x + self._h - y <= self._dragcorner_size then
 					self._grab = {size = true, x = ox, y = oy}
@@ -162,51 +184,52 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
-			self.base()
-			
-			local b = self.borderSize
-			local b2 = b * 2
 			local th = self._title_height
 			local th2 = th / 2
 			local tw = self._closeable and w - th or w
 			
-			render.setMaterial()
+			render.setColor(self.titleBarColor)
+			render.drawRect(0, 0, w, th)
 			
-			render.setColor(self.secondaryColor)
-			render.drawRect(b, th - b, w - b2, b)
+			render.setColor(self.mainColor)
+			render.drawRect(0, th, w, h - th)
 			
-			-- Drag corner
-			if self._dragable then
+			-- Resize corner
+			if self._resizeable then
 				local m = Matrix()
 				m:setTranslation(Vector(w, h))
 				m:setScale(Vector(self._dragcorner_size))
+				
 				render.pushMatrix(m)
-				render.setColor(self.secondaryColor)
+				render.setColor(self.titleBarColor)
 				render.drawPoly(tri)
 				render.popMatrix()
 			end
 			
+			-- Titlebar text
 			local ax, ay = self._title_alignment_x, self._title_alignment_y
+			
 			render.setFont(self.titleFont)
 			render.setColor(self.titleColor)
-			render.drawSimpleText(ax == 0 and b or (ax == 1 and tw / 2 or tw - b), ay == 3 and b or (ay == 1 and th2 or th), self._title, ax, ay)
+			render.drawSimpleText(ax == 0 and 0 or (ax == 1 and tw / 2 or tw), ay == 3 and 0 or (ay == 1 and th2 or th), self._title, ax, ay)
 			
+			-- Close button
 			if self._closeable then
-				render.setColor(self.secondaryColor)
-				render.drawRect(w - th, b, b, th - b2)
+				local th = self._text_height
+				local s = Vector(th / 12, th)
+				local a = math.sin(self:getAnimation("close_hover") * math.pi / 2) * 90
 				
-				render.setColor(self.secondaryColor * (1 - self._close_hoverprogress) + self.titleColor * self._close_hoverprogress)
 				local m = Matrix()
 				m:setTranslation(Vector(w - th2, th2))
-				m:setAngles(Angle(0, 45, 0))
-				m:setScale(Vector(b, th - b2))
+				m:setAngles(Angle(0, 45 + a, 0))
+				m:setScale(s)
 				render.pushMatrix(m)
 				render.drawPoly(rect)
 				render.popMatrix()
 				
 				m:setScale(Vector(1, 1))
-				m:setAngles(Angle(0, 135, 0))
-				m:setScale(Vector(b, th - b2))
+				m:setAngles(Angle(0, 135 + a, 0))
+				m:setScale(s)
 				render.pushMatrix(m)
 				render.drawPoly(rect)
 				render.popMatrix()
@@ -222,6 +245,47 @@ return {
 	----------------------------------------
 	
 	properties = {
+		mainColor = {
+			set = function(self, color)
+				self._main_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._main_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryColorLight
+			end
+		},
+		
+		titleBarColor = {
+			set = function(self, color)
+				self._title_bar_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._title_bar_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryColorDark
+			end
+		},
+		
+		titleColor = {
+			set = function(self, color)
+				self._title_color = color
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				local clr = self._title_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryTextColor
+			end
+		},
+		
+		------------------------------
+		
 		title = {
 			set = function(self, text)
 				self._title = text
@@ -238,23 +302,12 @@ return {
 			set = function(self, font)
 				self._title_font = font
 				
+				self:_setTextHeight()
 				self:_changed(true)
 			end,
 			
 			get = function(self)
 				return self._title_font or self._theme.font
-			end
-		},
-		
-		titleColor = {
-			set = function(self, color)
-				self._title_color = color
-				
-				self:_changed(true)
-			end,
-			
-			get = function(self)
-				return self._title_color or self._theme.textColor
 			end
 		},
 		
@@ -330,6 +383,16 @@ return {
 			end
 		},
 		
+		dragbarSize = {
+			set = function(self, value)
+				self._dragbar_size = value
+			end,
+			
+			get = function(self)
+				return self._dragbar_size
+			end
+		},
+		
 		minSizeX = {
 			set = function(self, x)
 				self._min_x = x
@@ -352,8 +415,13 @@ return {
 		
 		minSize = {
 			set = function(self, x, y)
-				self._min_x = x
-				self._min_y = y
+				if y then
+					self._min_x = x
+					self._min_y = y
+				else
+					self._min_x = x.x
+					self._min_y = x.y
+				end
 			end,
 			
 			get = function(self)
@@ -390,6 +458,16 @@ return {
 			
 			get = function(self)
 				return self._resizeable
+			end
+		},
+		
+		minimizeOnClose = {
+			set = function(self, state)
+				self._minimize_on_close = state
+			end,
+			
+			get = function(self)
+				return self._minimize_on_close
 			end
 		},
 		

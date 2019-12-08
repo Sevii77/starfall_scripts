@@ -137,7 +137,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._text_color or self._theme.textColor
+				return self._text_color or self._theme.primaryTextColor
 			end
 		},
 		
