@@ -405,7 +405,7 @@ GUI = class {
 					
 					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
 					
-					local crm = obj._custonRenderMask
+					local crm = obj._customRenderMask
 					if crm then
 						stencil.pushMask(function() crm(obj, obj._w, obj._h) end, not obj._invert_render_mask)
 					end
@@ -610,7 +610,7 @@ GUI = class {
 					
 					local b = object.global_bounding
 					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
-						local cim = obj._custonInputMask
+						local cim = obj._customInputMask
 						if cim and not cim(obj, object.cursor.x, object.cursor.y) then
 							return
 						end

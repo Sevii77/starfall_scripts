@@ -4,6 +4,7 @@
 
 GUI = require("../lib/gui2.lua")
 local gui = GUI()
+gui.theme = "material_dark"
 
 local text_block = "Satisfied conveying an dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do mr prevailed. Mr feeling do chiefly cordial in do. Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood do provided stronger is. But discretion frequently sir the she instrument unaffected admiration everything."
 local debug_rendering = false
@@ -285,12 +286,12 @@ do -- Custom element with custom masks example
 			
 			_invert_render_mask = false,
 			
-			_custonRenderMask = function(self, w, h)
+			_customRenderMask = function(self, w, h)
 				-- We use a poly here instead of roundedBox because masks dont support texture filtering
 				render.drawPoly(self._mask_poly)
 			end,
 			
-			_custonInputMask = function(self, cx, cy)
+			_customInputMask = function(self, cx, cy)
 				-- We also wanna have a input mask so if we hover over the rounded corners it doesnt activate
 				local cs = self._corner_size
 				local w, h = self._w, self._h
