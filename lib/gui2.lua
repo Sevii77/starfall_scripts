@@ -8,7 +8,7 @@
 		if an element has changed in a minor way (changed something within the same bounds)
 		make it only redraw the element itself and not the whole gui
 	more elements
-	mask stacking
+	mask stacking (perhabs? is expensive)
 ]]
 
 local class, checktype = unpack(require("./class.lua"))
@@ -330,6 +330,7 @@ GUI = class {
 		------------------------------
 		
 		_changed = function(self, object, simple)
+			-- self._redraw[object] = simple and true or false
 			self._redraw_all = true
 		end,
 		
@@ -396,7 +397,7 @@ GUI = class {
 				
 				local function draw(object, masks)
 					local obj = object.object
-					if not obj._enabled then return end
+					if not obj._enabled or not obj._visible then return end
 					
 					local b = object.global_bounding
 					-- local masks = table.copy(masks)
@@ -422,17 +423,16 @@ GUI = class {
 					
 					local m = Matrix()
 					m:setTranslation(obj._pos)
-					
-					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
 					render.pushMatrix(m)
 					
 					local crm = obj._customRenderMask
 					if crm then
 						stencil.pushMask(function()
 							crm(obj, obj._w, obj._h)
-						end, not obj._invert_render_mask)
+						end, obj._invert_render_mask)
 					end
 					
+					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
 					obj:_draw(deltatime)
 					render.disableScissorRect()
 					
@@ -458,7 +458,12 @@ GUI = class {
 				render.selectRenderTarget()
 				render.popMatrix()
 				
+				self._redraw = {}
 				self._redraw_all = false
+			elseif table.count(self._redraw) > 0 then
+				-- TODO :D
+				
+				self._redraw = {}
 			end
 			
 			render.setRenderTargetTexture(self._rtid)
@@ -466,11 +471,58 @@ GUI = class {
 			render.drawTexturedRect(0, 0, self._w, self._h)
 		end,
 		
+		renderHUD = function(self)
+			local deltatime = self._deltatime
+			local w, h = render.getResolution()
+			local sx, sy = w / self._w, h / self._h
+			local s = Vector(sx, sy)
+			
+			local function draw(object, masks)
+				local obj = object.object
+				if not obj._enabled or not obj._visible then return end
+				
+				local m = Matrix()
+				m:setTranslation(obj._pos)
+				render.pushMatrix(m)
+				
+				local crm = obj._customRenderMask
+				if crm then
+					stencil.pushMask(function()
+						crm(obj, obj._w, obj._h)
+					end, obj._invert_render_mask)
+				end
+				
+				local b = object.global_bounding
+				render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
+				obj:_draw(deltatime)
+				render.disableScissorRect()
+				
+				if crm then
+					stencil.popMask()
+				end
+				
+				for i = #object.order, 1, -1 do
+					draw(object.children[object.order[i]], masks)
+				end
+				
+				render.popMatrix()
+			end
+			
+			local m = Matrix()
+			m:setScale(s)
+			render.pushMatrix(m, true)
+			for i = #self._render_order, 1, -1 do
+				draw(self._objects[self._render_order[i]], {})
+			end
+			render.popMatrix()
+		end,
+		
 		renderDirect = function(self)
 			local sx, sy = 1024 / self._w, 1024 / self._h
 			
 			local function draw(object)
 				local obj = object.object
+				if not obj._enabled or not obj._visible then return end
 				
 				local m = Matrix()
 				m:setTranslation(obj._pos)
@@ -490,28 +542,54 @@ GUI = class {
 		end,
 		
 		renderDebug = function(self)
-			render.setRGBA(255, 0, 255, 255)
+			render.setRGBA(255, 0, 255, 50)
 			for obj, object in pairs(self._object_refs) do
-				local b = object.global_bounding
-				render.drawLine(b.x, b.y, b.x2, b.y)
-				render.drawLine(b.x, b.y, b.x, b.y2)
-				render.drawLine(b.x, b.y2, b.x2, b.y2)
-				render.drawLine(b.x2, b.y, b.x2, b.y2)
-				render.drawLine(b.x, b.y, b.x2, b.y2)
+				if obj._enabled and obj._visible then
+					local b = object.global_bounding
+					render.drawLine(b.x, b.y, b.x2, b.y)
+					render.drawLine(b.x, b.y, b.x, b.y2)
+					render.drawLine(b.x, b.y2, b.x2, b.y2)
+					render.drawLine(b.x2, b.y, b.x2, b.y2)
+					render.drawLine(b.x, b.y, b.x2, b.y2)
+				end
 			end
 		end,
 		
-		renderCursor = function(self)
-			local cx, cy = self:getCursorPos()
-			local theme = self._theme
-			
-			local m = Matrix()
-			m:setTranslation(Vector(cx, cy))
-			m:setScale(Vector(self._theme.cursorSize / 32))
-			render.pushMatrix(m)
+		renderMasks = function(self)
+			render.setRGBA(255, 0, 255, 50)
 			render.setMaterial()
-			theme.cursorRender[self._cursor_mode](theme.cursorMainColor, theme.cursorOutlineColor)
-			render.popMatrix()
+			
+			for obj, object in pairs(self._object_refs) do
+				if obj._enabled and obj._visible then
+					local crm = obj._customRenderMask
+					if crm then
+						local b = object.global_bounding
+						local m = Matrix()
+						m:setTranslation(Vector(b.gx, b.gy))
+						render.pushMatrix(m)
+						crm(obj, obj._w, obj._h)
+						render.popMatrix()
+					end
+				end
+			end
+		end,
+		
+		renderCursor = function(self, s)
+			local cx, cy = self:getCursorPos()
+			
+			if cx then
+				local theme = self._theme
+				local w, h = render.getResolution()
+				local sx, sy = w / self._w, h / self._h
+				
+				local m = Matrix()
+				m:setTranslation(Vector(cx * sx, cy * sy))
+				m:setScale(Vector(sx, sy) * self._theme.cursorSize / 32 * (s or 1))
+				render.pushMatrix(m)
+				render.setMaterial()
+				theme.cursorRender[self._cursor_mode](theme.cursorMainColor, theme.cursorOutlineColor)
+				render.popMatrix()
+			end
 		end,
 		
 		think = function(self, cx, cy)
@@ -588,6 +666,8 @@ GUI = class {
 						self._objects[obj] = object
 						table.insert(self._render_order, 1, obj)
 					end
+					
+					object.parent = parent
 				end
 				
 				self._parent_queue = {}
@@ -601,11 +681,16 @@ GUI = class {
 				cx, cy = x, y
 			end
 			
+			if cx then
+				local w, h = render.getResolution()
+				cx, cy = self._w / w * cx, self._h / h * cy
+			end
+			
 			local function think(objects, px, py, px2, py2, px3, py3)
 				for obj, data in pairs(objects) do
-					if obj._enabled then
+					if obj._enabled and obj._visible then
 						local b = data.global_bounding
-						local lx, ly = cx and cx - b.gx or nil, cy and cy - b.gy or nil
+						local lx, ly = cx and cx - (b.gx or 0) or nil, cy and cy - (b.gy or 0) or nil
 						obj:_think(deltatime, lx, ly)
 						data.cursor = {x = lx, y = ly}
 						
@@ -628,7 +713,7 @@ GUI = class {
 			if cx then
 				local function dobj(object)
 					local obj = object.object
-					if not obj._enabled then return end
+					if not obj._enabled or not obj._visible then return end
 					
 					local b = object.global_bounding
 					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
@@ -685,6 +770,11 @@ GUI = class {
 				return p.x, p.y
 			else
 				local _, x, y = xpcall(render.cursorPos, input.getCursorPos)
+				
+				if x then
+					local w, h = render.getResolution()
+					x, y = self._w / w * x, self._h / h * y
+				end
 				
 				return x, y
 			end

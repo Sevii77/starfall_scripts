@@ -12,6 +12,7 @@ return {
 		
 		_enabled = true,
 		_translucent = false, -- Allow mouse rays to pass through
+		_visible = true,
 		
 		_pos = true,
 		_x = 0,
@@ -20,6 +21,8 @@ return {
 		_size = true,
 		_w = 0,
 		_h = 0,
+		
+		-- Originals, unaffected by docking scaling
 		_ow = 0,
 		_oh = 0,
 		
@@ -41,12 +44,28 @@ return {
 		
 		------------------------------
 		
-		_sizeChanged = function(self)
+		_sizeChanged = function(self, ow, oh)
 			-- Called by base, can be overwritten so you dont have to overwrite all 3 size properties
 		end,
 		
-		_posChanged = function(self)
+		_posChanged = function(self, ox, oy)
 			-- Called by base, can be overwritten so you dont have to overwrite all 3 pos properties
+		end,
+		
+		------------------------------
+		
+		_calculateVisible = function(self)
+			local x, y, w, h = self._x, self._y, self._w, self._h
+			local pw, ph
+			local p = self.parent
+			
+			if p then
+				pw, ph = p._w, p._h
+			else
+				pw, ph = self._gui._w, self._gui._h
+			end
+			
+			self._visible = x < pw and y < ph and x + w > 0 and y + h > 0
 		end,
 		
 		------------------------------
@@ -102,6 +121,8 @@ return {
 		},
 		
 		_updateDockingParent = function(self)
+			if self._dock.type == 0 then return end
+			
 			local parent = self.parent
 			if parent then
 				parent:_updateDocking()
@@ -164,6 +185,7 @@ return {
 						child._x = x
 						child._y = y
 						
+						child:_calculateVisible()
 						child:_posChanged()
 						child:_changed()
 					end
@@ -178,6 +200,7 @@ return {
 						child._w = w
 						child._h = h
 						
+						child:_calculateVisible()
 						child:_sizeChanged()
 						child:_updateDocking()
 						child:_changed()
@@ -314,6 +337,8 @@ return {
 		
 		pos = {
 			set = function(self, x, y)
+				local ox, oy = self._x, self._y
+				
 				if y then
 					self._pos.x = x
 					self._pos.y = y
@@ -325,7 +350,8 @@ return {
 					self._y = x.y
 				end
 				
-				self:_posChanged()
+				self:_calculateVisible()
+				self:_posChanged(ox, oy)
 				self:_changed()
 			end,
 			
@@ -336,10 +362,13 @@ return {
 		
 		x = {
 			set = function(self, x)
+				local ox = self._x
+				
 				self._pos.x = x
 				self._x = x
 				
-				self:_posChanged()
+				self:_calculateVisible()
+				self:_posChanged(ox, self._y)
 				self:_changed()
 			end,
 			
@@ -350,10 +379,13 @@ return {
 		
 		y = {
 			set = function(self, y)
+				local oy = self._y
+				
 				self._pos.y = y
 				self._y = y
 				
-				self:_posChanged()
+				self:_calculateVisible()
+				self:_posChanged(self._x, oy)
 				self:_changed()
 			end,
 			
@@ -366,6 +398,8 @@ return {
 		
 		size = {
 			set = function(self, w, h)
+				local ow, oh = self._w, self._h
+				
 				if h then
 					self._size.x = w
 					self._size.y = h
@@ -381,7 +415,8 @@ return {
 					self._oh = w.y
 				end
 				
-				self:_sizeChanged()
+				self:_calculateVisible()
+				self:_sizeChanged(ow, oh)
 				self:_updateDockingParent()
 				self:_changed()
 			end,
@@ -393,11 +428,14 @@ return {
 		
 		w = {
 			set = function(self, w)
+				local ow = self._w
+				
 				self._size.x = w
 				self._w = w
 				self._ow = w
 				
-				self:_sizeChanged()
+				self:_calculateVisible()
+				self:_sizeChanged(ow, self._h)
 				self:_updateDockingParent()
 				self:_changed()
 			end,
@@ -409,11 +447,14 @@ return {
 		
 		h = {
 			set = function(self, h)
+				local oh = self._h
+				
 				self._size.y = h
 				self._h = h
 				self._oh = h
 				
-				self:_sizeChanged()
+				self:_calculateVisible()
+				self:_sizeChanged(self._w, oh)
 				self:_updateDockingParent()
 				self:_changed()
 			end,

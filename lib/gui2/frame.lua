@@ -42,7 +42,7 @@ return {
 		_dragable = true,
 		_closeable = true,
 		_resizeable = true,
-		_minimize_on_close = false,
+		_collapse_on_close = false,
 		
 		_true_height = 0,
 		_inner = false,
@@ -66,7 +66,7 @@ return {
 		
 		_sizeChanged = function(self)
 			self:_calculateInner()
-			self:_createShapePoly()
+			-- self:_createShapePoly()
 			
 			self._true_height = self._h
 		end,
@@ -79,8 +79,8 @@ return {
 			
 			if x and g then
 				if g.move then
-					local nx = x - g.x
-					local ny = y - g.y
+					local nx = math.floor(x - g.x)
+					local ny = math.floor(y - g.y)
 					
 					if nx ~= self._x or ny ~= self._y then
 						self.x = nx
@@ -105,15 +105,14 @@ return {
 			
 			self:_animationUpdate("close_hover", self._close_hovering, dt * self.animationSpeed)
 			
-			if self._minimize_on_close then
-				local changed, progress = self:_animationUpdate("minimize", self._closed, dt * self.animationSpeed)
+			if self._collapse_on_close then
+				local changed, progress = self:_animationUpdate("collapse", self._closed, dt * self.animationSpeed)
 				
 				if changed then
 					self._h = math.lerp(progress, self._true_height, self._title_height)
 					self._size.y = self._h
 					
 					self:_calculateInner()
-					self:_createShapePoly()
 					self:_updateDockingParent()
 					self:_changed()
 				end
@@ -126,7 +125,7 @@ return {
 			if y < self._title_height then
 				if x > self._w - self._title_height and self._closeable then
 					if not self:onClose() then
-						if self._minimize_on_close then
+						if self._collapse_on_close then
 							self._closed = not self._closed
 						else
 							self:remove()
@@ -217,18 +216,19 @@ return {
 			if self._closeable then
 				local th = self._text_height
 				local s = Vector(th / 12, th)
-				local a = math.sin(self:getAnimation("close_hover") * math.pi / 2) * 90
+				local a = self._closed and 90 or (self._close_hovering and math.sin(self:getAnimation("close_hover") * math.pi / 2) * 90 or math.cos(self:getAnimation("close_hover") * math.pi / 2) * 90)
+				local c = self:getAnimation("collapse") * (45 - (math.sin(self:getAnimation("close_hover")) * 20 * self:getAnimation("collapse")))
 				
 				local m = Matrix()
 				m:setTranslation(Vector(w - th2, th2))
-				m:setAngles(Angle(0, 45 + a, 0))
+				m:setAngles(Angle(0, 45 + a - c, 0))
 				m:setScale(s)
 				render.pushMatrix(m)
 				render.drawPoly(rect)
 				render.popMatrix()
 				
 				m:setScale(Vector(1, 1))
-				m:setAngles(Angle(0, 135 + a, 0))
+				m:setAngles(Angle(0, 135 + a + c, 0))
 				m:setScale(s)
 				render.pushMatrix(m)
 				render.drawPoly(rect)
@@ -461,13 +461,13 @@ return {
 			end
 		},
 		
-		minimizeOnClose = {
+		collapseOnClose = {
 			set = function(self, state)
-				self._minimize_on_close = state
+				self._collapse_on_close = state
 			end,
 			
 			get = function(self)
-				return self._minimize_on_close
+				return self._collapse_on_close
 			end
 		},
 		

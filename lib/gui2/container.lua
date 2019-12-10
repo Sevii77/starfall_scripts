@@ -1,7 +1,20 @@
+local slant = {
+	{x = 0, y = 0},
+	{x = 1, y = 0},
+	{x = 0, y = 1}
+}
+
+local curve = {{x = 0, y = 0}}
+for i = 0, 9 do
+	local rad = i / 18 * math.pi
+	table.insert(curve, {x = 1 - math.sin(rad), y = 1 - math.cos(rad)})
+end
+
+
 return {
 	inherit = "base",
 	constructor = function(self)
-		self:_createShapePoly()
+		-- self:_createShapePoly()
 	end,
 	
 	----------------------------------------
@@ -13,74 +26,121 @@ return {
 		
 		_main_color = false,
 		
-		_main_matrix = nil,
-		_mask_poly = nil,
+		-- _mask_poly = nil,
 		
 		------------------------------
 		
-		_postCreateShapePoly = function(self)
-			-- Used by elements that inherit and want to adjust things after the shape poly has been created
-		end,
+		-- _postCreateShapePoly = function(self)
+		-- 	-- Used by elements that inherit and want to adjust things after the shape poly has been created
+		-- end,
 		
-		_createShapePoly = function(self)
-			local stl, str, sbr, sbl = self:getCornerStyle()
-			local ztl, ztr, zbr, zbl = self:getCornerSize()
-			local w, h = self._w, self._h
-			local poly = {}
+		-- _createShapePoly = function(self)
+		-- 	local stl, str, sbr, sbl = self:getCornerStyle()
+		-- 	local ztl, ztr, zbr, zbl = self:getCornerSize()
+		-- 	local w, h = self._w, self._h
+		-- 	local poly = {}
 			
-			-- Top Left
-			if stl == 0 then
-				table.insert(poly, {x = 0, y = 0})
-			else
-				for i = 0, 9, stl == 1 and 1 or 9 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = ztl - math.cos(rad) * ztl, y = ztl - math.sin(rad) * ztl})
-				end
-			end
+		-- 	-- Top Left
+		-- 	if stl == 0 then
+		-- 		table.insert(poly, {x = 0, y = 0})
+		-- 	else
+		-- 		for i = 0, 9, stl == 1 and 1 or 9 do
+		-- 			local rad = i / 18 * math.pi
+		-- 			table.insert(poly, {x = ztl - math.cos(rad) * ztl, y = ztl - math.sin(rad) * ztl})
+		-- 		end
+		-- 	end
 			
-			-- Top Right
-			if str == 0 then
-				table.insert(poly, {x = w, y = 0})
-			else
-				for i = 9, 18, str == 1 and 1 or 9 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = w - ztr - math.cos(rad) * ztr, y = ztr - math.sin(rad) * ztr})
-				end
-			end
+		-- 	-- Top Right
+		-- 	if str == 0 then
+		-- 		table.insert(poly, {x = w, y = 0})
+		-- 	else
+		-- 		for i = 9, 18, str == 1 and 1 or 9 do
+		-- 			local rad = i / 18 * math.pi
+		-- 			table.insert(poly, {x = w - ztr - math.cos(rad) * ztr, y = ztr - math.sin(rad) * ztr})
+		-- 		end
+		-- 	end
 			
-			-- Bottom Right
-			if sbr == 0 then
-				table.insert(poly, {x = w, y = h})
-			else
-				for i = 18, 27, sbr == 1 and 1 or 9 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = w - zbr - math.cos(rad) * zbr, y = h - zbr - math.sin(rad) * zbr})
-				end
-			end
+		-- 	-- Bottom Right
+		-- 	if sbr == 0 then
+		-- 		table.insert(poly, {x = w, y = h})
+		-- 	else
+		-- 		for i = 18, 27, sbr == 1 and 1 or 9 do
+		-- 			local rad = i / 18 * math.pi
+		-- 			table.insert(poly, {x = w - zbr - math.cos(rad) * zbr, y = h - zbr - math.sin(rad) * zbr})
+		-- 		end
+		-- 	end
 			
-			-- Bottom Left
-			if sbl == 0 then
-				table.insert(poly, {x = 0, y = h})
-			else
-				for i = 27, 36, sbl == 1 and 1 or 9 do
-					local rad = i / 18 * math.pi
-					table.insert(poly, {x = zbl - math.cos(rad) * zbl, y = h - zbl - math.sin(rad) * zbl})
-				end
-			end
+		-- 	-- Bottom Left
+		-- 	if sbl == 0 then
+		-- 		table.insert(poly, {x = 0, y = h})
+		-- 	else
+		-- 		for i = 27, 36, sbl == 1 and 1 or 9 do
+		-- 			local rad = i / 18 * math.pi
+		-- 			table.insert(poly, {x = zbl - math.cos(rad) * zbl, y = h - zbl - math.sin(rad) * zbl})
+		-- 		end
+		-- 	end
 			
-			self._mask_poly = poly
-			self:_postCreateShapePoly()
-		end,
+		-- 	self._mask_poly = poly
+		-- 	self:_postCreateShapePoly()
+		-- end,
 		
-		_sizeChanged = function(self)
-			self:_createShapePoly()
-		end,
+		-- _sizeChanged = function(self)
+		-- 	self:_createShapePoly()
+		-- end,
 		
 		------------------------------
 		
 		_customRenderMask = function(self, w, h)
-			render.setRGBA(math.random(100, 256), math.random(100, 256), math.random(100, 256), 100)
-			render.drawPoly(self._mask_poly)
+			-- render.drawPoly(self._mask_poly)
+			
+			local stl, str, sbr, sbl = self:getCornerStyle()
+			local ztl, ztr, zbr, zbl = self:getCornerSize()
+			
+			-- Top Left
+			if stl ~= 0 then
+				local m = Matrix()
+				m:setScale(Vector(ztl))
+				
+				render.pushMatrix(m)
+				render.drawPoly(stl == 1 and curve or slant)
+				render.popMatrix()
+			end
+			
+			-- Top Right
+			if str ~= 0 then
+				local m = Matrix()
+				m:setTranslation(Vector(w, 0))
+				m:setAngles(Angle(0, 90, 0))
+				m:setScale(Vector(ztr))
+				
+				render.pushMatrix(m)
+				render.drawPoly(str == 1 and curve or slant)
+				render.popMatrix()
+			end
+			
+			-- Bottom Right
+			if sbr ~= 0 then
+				local m = Matrix()
+				m:setTranslation(Vector(w, h))
+				m:setAngles(Angle(0, 180, 0))
+				m:setScale(Vector(zbr))
+				
+				render.pushMatrix(m)
+				render.drawPoly(sbr == 1 and curve or slant)
+				render.popMatrix()
+			end
+			
+			-- Bottom Left
+			if sbl ~= 0 then
+				local m = Matrix()
+				m:setTranslation(Vector(0, h))
+				m:setAngles(Angle(0, 270, 0))
+				m:setScale(Vector(zbl))
+				
+				render.pushMatrix(m)
+				render.drawPoly(sbl == 1 and curve or slant)
+				render.popMatrix()
+			end
 		end,
 		
 		_customInputMask = function(self, cx, cy)
@@ -133,7 +193,7 @@ return {
 					self._corner_style = {tl = tl, tr = tr or tl, br = br or tl, bl = bl or tl}
 				end
 				
-				self:_createShapePoly()
+				-- self:_createShapePoly()
 				self:_changed(true)
 			end,
 			
@@ -153,7 +213,7 @@ return {
 					self._corner_size = {tl = tl, tr = tr or tl, br = br or tl, bl = bl or tl}
 				end
 				
-				self:_createShapePoly()
+				-- self:_createShapePoly()
 				self:_changed(true)
 			end,
 			

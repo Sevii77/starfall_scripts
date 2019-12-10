@@ -3,18 +3,24 @@
 
 local text_block = "Satisfied conveying an dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do mr prevailed. Mr feeling do chiefly cordial in do. Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood do provided stronger is. But discretion frequently sir the she instrument unaffected admiration everything."
 local debug_rendering = false
+local mask_rendering = false
+local direct_rendering = false
 
 ------------------------------
 
 GUI = require("../lib/gui2.lua")
-local gui = GUI()
+local gui = GUI(512, 512)
+
+-- Use this for hud
+--local w, h = render.getGameResolution()
+--local gui = GUI(w, h)
 
 do -- Basic example
 	local body = gui:create("frame")
 	body.pos = Vector(4, 56)
 	body.size = Vector(250, 400)
 	body.title = "Fancy Example"
-	body.minimizeOnClose = true
+	body.collapseOnClose = true
 	body.minSize = Vector(150, 250)
 	
 	do
@@ -55,9 +61,9 @@ do -- Basic example
 			slider:setCornerSize(20, 0, 0, 0)
 			grid:addItem(slider)
 			slider.onChange = function(self, value)
-				gui.theme.secondaryColor      = Color(value, 1, 1):hsvToRGB()
-				gui.theme.secondaryColorLight = Color(value, 0.7, 1):hsvToRGB()
-				gui.theme.secondaryColorDark  = Color(value, 1, 0.8):hsvToRGB()
+				gui.theme.secondaryColor      = Color(value, 0.6, 0.6):hsvToRGB()
+				gui.theme.secondaryColorLight = Color(value, 0.4, 0.6):hsvToRGB()
+				gui.theme.secondaryColorDark  = Color(value, 0.6, 0.4):hsvToRGB()
 			end
 			
 			local label = gui:create("label")
@@ -71,8 +77,8 @@ do -- Basic example
 			bar.h = 30
 			bar.text = "Themes"
 			bar.textAlignmentX = 0
-			bar:setCornerStyle(0, 0, 2, 0)
-			bar.cornerSize = 10
+			bar:setCornerStyle(0, 0, 2, 1)
+			bar:setCornerSize(0, 0, 10, 5)
 			bar.dock = GUI.DOCK.BOTTOM
 			
 			local light, dark, art
@@ -153,6 +159,24 @@ do -- Basic example
 					debug_rendering = state
 				end
 				
+				local masks = gui:create("checkbox")
+				masks.style = 2
+				masks.text = "Masks Rendering"
+				masks.cornerStyle = 0
+				grid:addItem(masks)
+				masks.onChange = function(self, state)
+					mask_rendering = state
+				end
+				
+				local direct = gui:create("checkbox")
+				direct.style = 2
+				direct.text = "Direct Rendering"
+				direct.cornerStyle = 0
+				grid:addItem(direct)
+				direct.onChange = function(self, state)
+					direct_rendering = state
+				end
+				
 				local bg = gui:create("button")
 				bg.text = "Enable Background"
 				bg.toggle = true
@@ -160,6 +184,8 @@ do -- Basic example
 				grid:addItem(bg)
 				bg.onClick = function(self)
 					debug.drawBackground = self.state
+					masks.drawBackground = self.state
+					direct.drawBackground = self.state
 					
 					if self.state then
 						bg:setCornerStyle(0, 0, 0, 0)
@@ -176,6 +202,8 @@ do -- Basic example
 				grid:addItem(style)
 				style.onClick = function(self)
 					debug.style = 1
+					masks.style = 1
+					direct.style = 1
 					
 					if not bg.state then
 						bg:setCornerStyle(1, 1, 0, 0)
@@ -188,6 +216,8 @@ do -- Basic example
 				grid:addItem(style2)
 				style2.onClick = function(self)
 					debug.style = 2
+					masks.style = 2
+					direct.style = 2
 					
 					if not bg.state then
 						bg:setCornerStyle(0, 1, 0, 0)
@@ -262,7 +292,7 @@ do -- Docking
 	body.pos = Vector(258, 56)
 	body.size = Vector(250, 200)
 	body.title = "Docking"
-	body.minimizeOnClose = true
+	body.collapseOnClose = true
 	body.minSize = Vector(150, 100)
 	
 	local holder = gui:create("base", body.inner)
@@ -298,10 +328,10 @@ end
 
 do -- Grid
 	local body = gui:create("frame")
-	body.pos = Vector(258, 256)
-	body.size = Vector(250, 200)
+	body.pos = Vector(258, 260)
+	body.size = Vector(250, 196)
 	body.title = "Grid"
-	body.minimizeOnClose = true
+	body.collapseOnClose = true
 	body.minSize = Vector(150, 100)
 	
 	local grid = gui:create("grid", body.inner)
@@ -320,14 +350,43 @@ end
 ------------------------------
 
 hook.add("render", "", function()
+	render.setBackgroundColor(Color(0, 0, 0, 0))
+	
 	gui:think()
-	gui:render()
-	--gui:renderCursor()
+	
+	if direct_rendering then
+		gui:renderDirect()
+	else
+		gui:render()
+	end
+	
+	gui:renderCursor()
 	
 	if debug_rendering then
 		gui:renderDebug()
+	end
+	if mask_rendering then
+		gui:renderMasks()
 	end
 	
 	render.setRGBA(255, 255, 255, 255)
 	render.drawSimpleText(0, 0, tostring(math.round(quotaAverage() * 1000000)))
 end)
+
+--[[hook.add("drawHUD", "", function()
+	gui:think()
+	gui:renderHUD()
+	gui:renderCursor(10)
+	
+	if debug_rendering then
+		gui:renderDebug()
+	end
+	if mask_rendering then
+		gui:renderMasks()
+	end
+	
+	render.setRGBA(255, 255, 255, 255)
+	render.drawSimpleText(0, 35, tostring(math.round(quotaAverage() * 1000000)))
+end)]]
+
+

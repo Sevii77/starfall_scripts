@@ -11,6 +11,7 @@ return {
 		self.style = 1
 		
 		self:_setTextHeight()
+		self:_createShapePoly()
 	end,
 	
 	----------------------------------------
@@ -30,6 +31,62 @@ return {
 		_value = 0,
 		_progress = 0,
 		_holding = false,
+		_shape_poly = nil,
+		
+		------------------------------
+		
+		_createShapePoly = function(self)
+			local stl, str, sbr, sbl = self:getCornerStyle()
+			local ztl, ztr, zbr, zbl = self:getCornerSize()
+			local w, h = self._w / 2, self._h / 2
+			local poly = {}
+			
+			-- Top Left
+			if stl == 0 then
+				table.insert(poly, {x = -w, y = -h})
+			else
+				for i = 0, 9, stl == 1 and 1 or 9 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = ztl - math.cos(rad) * ztl - w, y = ztl - math.sin(rad) * ztl - h})
+				end
+			end
+			
+			-- Top Right
+			if str == 0 then
+				table.insert(poly, {x = w, y = -h})
+			else
+				for i = 9, 18, str == 1 and 1 or 9 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = w - ztr - math.cos(rad) * ztr, y = ztr - math.sin(rad) * ztr - h})
+				end
+			end
+			
+			-- Bottom Right
+			if sbr == 0 then
+				table.insert(poly, {x = w, y = h})
+			else
+				for i = 18, 27, sbr == 1 and 1 or 9 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = w - zbr - math.cos(rad) * zbr, y = h - zbr - math.sin(rad) * zbr})
+				end
+			end
+			
+			-- Bottom Left
+			if sbl == 0 then
+				table.insert(poly, {x = -w, y = h})
+			else
+				for i = 27, 36, sbl == 1 and 1 or 9 do
+					local rad = i / 18 * math.pi
+					table.insert(poly, {x = zbl - math.cos(rad) * zbl - w, y = h - zbl - math.sin(rad) * zbl})
+				end
+			end
+			
+			self._shape_poly = poly
+		end,
+		
+		_sizeChanged = function(self, ow, h)
+			self:_createShapePoly()
+		end,
 		
 		------------------------------
 		
@@ -130,11 +187,11 @@ return {
 					end
 					
 					local m = Matrix()
-					m:setTranslation(Vector(hcp * 0.5 * h))
+					m:setTranslation(Vector(w / 2, h / 2))
 					m:setScale(Vector(1 - hcp * (h / w), 1 - hcp))
 					render.pushMatrix(m)
 					render.setColor(self.mainColor)
-					render.drawPoly(self._mask_poly)
+					render.drawPoly(self._shape_poly)
 					render.popMatrix()
 					
 					render.setColor(clr)

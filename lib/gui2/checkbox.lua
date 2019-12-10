@@ -21,6 +21,7 @@ return {
 		self.style = 1
 		
 		self:_setTextHeight()
+		self:_createBoxPoly()
 	end,
 	
 	----------------------------------------
@@ -40,7 +41,7 @@ return {
 		
 		------------------------------
 		
-		_postCreateShapePoly = function(self)
+		_createBoxPoly = function(self)
 			local stl, str, sbr, sbl = self:getCornerStyle()
 			local ztl, ztr, zbr, zbl = self:getCornerSize()
 			local h = self._h / 2
@@ -87,6 +88,12 @@ return {
 			end
 			
 			self._box_poly = poly
+		end,
+		
+		_sizeChanged = function(self, ow, h)
+			if oh ~= self._h then
+				self:_createBoxPoly()
+			end
 		end,
 		
 		------------------------------

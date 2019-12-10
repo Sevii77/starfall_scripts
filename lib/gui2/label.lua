@@ -1,7 +1,7 @@
 return {
 	inherit = "container",
 	constructor = function(self)
-		self:_createShapePoly()
+		
 	end,
 	
 	----------------------------------------
