@@ -355,7 +355,9 @@ GUI = class {
 				parent = parent,
 				children = {},
 				order = {},
-				global_bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
+				-- global_bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
+				bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
+				global_pos = {x = 0, y = 0},
 				cursor = {x = 0, y = 0}
 			}
 			
@@ -395,34 +397,13 @@ GUI = class {
 				local sx, sy = 1024 / self._w, 1024 / self._h
 				local s = Vector(sx, sy)
 				
-				local function draw(object, masks)
+				local function draw(object, parentpos)
 					local obj = object.object
 					if not obj._enabled or not obj._visible then return end
 					
-					local b = object.global_bounding
-					-- local masks = table.copy(masks)
-					-- local crm = obj._customRenderMask
-					-- if crm then
-					-- 	table.insert(masks, function()
-					-- 		local m = Matrix()
-					-- 		m:setTranslation(Vector(b.x, b.y))
-							
-					-- 		render.pushMatrix(m, true)
-					-- 		crm(obj, obj._w, obj._h)
-					-- 		render.popMatrix()
-					-- 	end)
-					-- end
-					
-					-- if #masks > 0 then
-					-- 	stencil.pushMask(function()
-					-- 		for i, mask in pairs(masks) do
-					-- 			mask()
-					-- 		end
-					-- 	end, not obj._invert_render_mask)
-					-- end
-					
+					local pos = parentpos + obj._pos
 					local m = Matrix()
-					m:setTranslation(obj._pos)
+					m:setTranslation(pos)
 					render.pushMatrix(m)
 					
 					local crm = obj._customRenderMask
@@ -432,7 +413,8 @@ GUI = class {
 						end, obj._invert_render_mask)
 					end
 					
-					render.enableScissorRect(b.x * sx, b.y * sy, b.x2 * sx, b.y2 * sy)
+					local b = object.bounding
+					render.enableScissorRect((b.x + pos.x) * sx, (b.y + pos.y) * sy, (b.x2 + pos.x) * sx, (b.y2 + pos.y) * sy)
 					obj:_draw(deltatime)
 					render.disableScissorRect()
 					
@@ -440,11 +422,11 @@ GUI = class {
 						stencil.popMask()
 					end
 					
-					for i = #object.order, 1, -1 do
-						draw(object.children[object.order[i]], masks)
-					end
-					
 					render.popMatrix()
+					
+					for i = #object.order, 1, -1 do
+						draw(object.children[object.order[i]], pos)
+					end
 				end
 				
 				local m = Matrix()
@@ -453,7 +435,7 @@ GUI = class {
 				render.selectRenderTarget(self._rtid)
 				render.clear(clearcolor)
 				for i = #self._render_order, 1, -1 do
-					draw(self._objects[self._render_order[i]], {})
+					draw(self._objects[self._render_order[i]], Vector())
 				end
 				render.selectRenderTarget()
 				render.popMatrix()
@@ -542,17 +524,41 @@ GUI = class {
 		end,
 		
 		renderDebug = function(self)
+			-- render.setRGBA(255, 0, 255, 50)
+			-- for obj, object in pairs(self._object_refs) do
+			-- 	if obj._enabled and obj._visible then
+			-- 		local ox, oy = object.global_pos.x, object.global_pos.y
+			-- 		local b = object.bounding
+			-- 		local x, y, x2, y2 = b.x + ox, b.y + oy, b.x2 + ox, b.y2 + oy
+					
+			-- 		render.drawLine(x, y, x2, y)
+			-- 		render.drawLine(x, y, x, y2)
+			-- 		render.drawLine(x, y2, x2, y2)
+			-- 		render.drawLine(x2, y, x2, y2)
+			-- 		render.drawLine(x, y, x2, y2)
+			-- 	end
+			-- end
 			render.setRGBA(255, 0, 255, 50)
-			for obj, object in pairs(self._object_refs) do
-				if obj._enabled and obj._visible then
-					local b = object.global_bounding
-					render.drawLine(b.x, b.y, b.x2, b.y)
-					render.drawLine(b.x, b.y, b.x, b.y2)
-					render.drawLine(b.x, b.y2, b.x2, b.y2)
-					render.drawLine(b.x2, b.y, b.x2, b.y2)
-					render.drawLine(b.x, b.y, b.x2, b.y2)
+			
+			local function draw(objects)
+				for obj, object in pairs(objects) do
+					if obj._enabled and obj._visible then
+						local ox, oy = object.global_pos.x, object.global_pos.y
+						local b = object.bounding
+						local x, y, x2, y2 = b.x + ox, b.y + oy, b.x2 + ox, b.y2 + oy
+						
+						render.drawLine(x, y, x2, y)
+						render.drawLine(x, y, x, y2)
+						render.drawLine(x, y2, x2, y2)
+						render.drawLine(x2, y, x2, y2)
+						render.drawLine(x, y, x2, y2)
+						
+						draw(object.children)
+					end
 				end
 			end
+			
+			draw(self._objects)
 		end,
 		
 		renderMasks = function(self)
@@ -563,9 +569,9 @@ GUI = class {
 				if obj._enabled and obj._visible then
 					local crm = obj._customRenderMask
 					if crm then
-						local b = object.global_bounding
+						local p = object.global_pos
 						local m = Matrix()
-						m:setTranslation(Vector(b.gx, b.gy))
+						m:setTranslation(Vector(p.x, p.y))
 						render.pushMatrix(m)
 						crm(obj, obj._w, obj._h)
 						render.popMatrix()
@@ -627,53 +633,53 @@ GUI = class {
 					
 					self._object_refs[obj] = nil
 				end
-				self._remove_queue = {}
 				
+				self._remove_queue = {}
 				self._redraw_all = true
 			end
 			
 			-- Change parents
-			if table.count(self._parent_queue) > 0 then
-				for obj, parent in pairs(self._parent_queue) do
-					local object = self._object_refs[obj]
-					if object.parent then
-						local parent_object = self._object_refs[object.parent]
-						parent_object.children[obj] = nil
+			-- if table.count(self._parent_queue) > 0 then
+			-- 	for obj, parent in pairs(self._parent_queue) do
+			-- 		local object = self._object_refs[obj]
+			-- 		if object.parent then
+			-- 			local parent_object = self._object_refs[object.parent]
+			-- 			parent_object.children[obj] = nil
 						
-						for i, o in pairs(parent_object.order) do
-							if o == obj then
-								table.remove(parent_object.order, i)
+			-- 			for i, o in pairs(parent_object.order) do
+			-- 				if o == obj then
+			-- 					table.remove(parent_object.order, i)
 								
-								break
-							end
-						end
-					else
-						self._objects[obj] = nil
+			-- 					break
+			-- 				end
+			-- 			end
+			-- 		else
+			-- 			self._objects[obj] = nil
 						
-						for i, o in pairs(self._render_order) do
-							if o == obj then
-								table.remove(self._render_order, i)
+			-- 			for i, o in pairs(self._render_order) do
+			-- 				if o == obj then
+			-- 					table.remove(self._render_order, i)
 								
-								break
-							end
-						end
-					end
+			-- 					break
+			-- 				end
+			-- 			end
+			-- 		end
 					
-					if parent then
-						self._object_refs[parent].children[obj] = object
-						table.insert(self._object_refs[parent].order, 1, obj)
-					else
-						self._objects[obj] = object
-						table.insert(self._render_order, 1, obj)
-					end
+			-- 		if parent then
+			-- 			self._object_refs[parent].children[obj] = object
+			-- 			table.insert(self._object_refs[parent].order, 1, obj)
+			-- 		else
+			-- 			self._objects[obj] = object
+			-- 			table.insert(self._render_order, 1, obj)
+			-- 		end
 					
-					object.parent = parent
-				end
+			-- 		object.parent = parent
+			-- 	end
 				
-				self._parent_queue = {}
+			-- 	self._parent_queue = {}
 				
-				self._redraw_all = true
-			end
+			-- 	self._redraw_all = true
+			-- end
 			
 			-- Think
 			if not cx then
@@ -686,25 +692,44 @@ GUI = class {
 				cx, cy = self._w / w * cx, self._h / h * cy
 			end
 			
-			local function think(objects, px, py, px2, py2, px3, py3)
-				for obj, data in pairs(objects) do
+			local function think(objects)
+				for obj, object in pairs(objects) do
 					if obj._enabled and obj._visible then
-						local b = data.global_bounding
-						local lx, ly = cx and cx - (b.gx or 0) or nil, cy and cy - (b.gy or 0) or nil
-						obj:_think(deltatime, lx, ly)
-						data.cursor = {x = lx, y = ly}
+						local gp = object.global_pos
+						local lcx, lcy = cx and (cx - gp.x) or nil, cy and (cy - gp.y) or nil
 						
-						local x3, y3 = obj._pos.x + px3, obj._pos.y + py3
-						local x, y = math.clamp(px, x3, px2), math.clamp(py, y3, py2)
-						local x2, y2 = math.clamp(x3 + obj._w, x, px2), math.clamp(y3 + obj._h, y, py2)
-						data.global_bounding = {x = x, y = y, x2 = x2, y2 = y2, gx = x3, gy = y3}
+						object.cursor = {x = lcx, y = lcy}
 						
-						think(data.children, x, y, x2, y2, x3, y3)
+						obj:_think(deltatime, lcx, lcy)
+						
+						think(object.children)
 					end
+					
+					obj:_postthink()
 				end
 			end
 			
-			think(self._objects, 0, 0, self._w, self._h, 0, 0)
+			think(self._objects)
+			
+			-- local function think(objects, px, py, px2, py2, px3, py3)
+			-- 	for obj, data in pairs(objects) do
+			-- 		if obj._enabled and obj._visible then
+			-- 			local b = data.global_bounding
+			-- 			local lx, ly = cx and cx - (b.gx or 0) or nil, cy and cy - (b.gy or 0) or nil
+			-- 			obj:_think(deltatime, lx, ly)
+			-- 			data.cursor = {x = lx, y = ly}
+						
+			-- 			local x3, y3 = obj._pos.x + px3, obj._pos.y + py3
+			-- 			local x, y = math.clamp(px, x3, px2), math.clamp(py, y3, py2)
+			-- 			local x2, y2 = math.clamp(x3 + obj._w, x, px2), math.clamp(y3 + obj._h, y, py2)
+			-- 			data.global_bounding = {x = x, y = y, x2 = x2, y2 = y2, gx = x3, gy = y3}
+						
+			-- 			think(data.children, x, y, x2, y2, x3, y3)
+			-- 		end
+			-- 	end
+			-- end
+			
+			-- think(self._objects, 0, 0, self._w, self._h, 0, 0)
 			
 			-- Mouse stuff
 			local last = self._focus_object
@@ -713,17 +738,15 @@ GUI = class {
 			if cx then
 				local function dobj(object)
 					local obj = object.object
-					if not obj._enabled or not obj._visible then return end
 					
-					local b = object.global_bounding
-					if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
+					local b = object.bounding
+					local c = object.cursor
+					
+					if c.x and c.x > b.x and c.y > b.y and c.x < b.x2 and c.y < b.y2 then
 						local cim = obj._customInputMask
-						if cim and not cim(obj, object.cursor.x, object.cursor.y) then return end
+						if cim and not cim(obj, c.x, c.y) then return end
 						
-						local hover
-						if not obj._translucent then
-							hover = object
-						end
+						local hover = not obj._translucent and object or nil
 						
 						for i, child in pairs(object.order) do
 							local h = dobj(object.children[child])
@@ -736,6 +759,30 @@ GUI = class {
 						
 						return hover
 					end
+					
+					-- if not obj._enabled or not obj._visible then return end
+					
+					-- local b = object.global_bounding
+					-- if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
+					-- 	local cim = obj._customInputMask
+					-- 	if cim and not cim(obj, object.cursor.x, object.cursor.y) then return end
+						
+					-- 	local hover
+					-- 	if not obj._translucent then
+					-- 		hover = object
+					-- 	end
+						
+					-- 	for i, child in pairs(object.order) do
+					-- 		local h = dobj(object.children[child])
+					-- 		if h then
+					-- 			hover = h
+								
+					-- 			break
+					-- 		end
+					-- 	end
+						
+					-- 	return hover
+					-- end
 				end
 				
 				for i, obj in pairs(self._render_order) do
@@ -871,7 +918,6 @@ GUI = class {
 				
 				local function dobj(objects)
 					for obj, data in pairs(objects) do
-						local b = data.global_bounding
 						obj._theme = self._theme
 						dobj(data.children)
 					end
@@ -1066,6 +1112,9 @@ GUI = class {
 ----------------------------------------
 
 -- Register all default elements
+local old_GUI = _G.GUI
+_G.GUI = GUI
+
 local elements_raw = {}
 for path, data in pairs(requiredir("./gui2")) do
 	elements_raw[string.match(path, "/(%w+).lua$")] = data
@@ -1083,8 +1132,6 @@ local function doElement(name)
 	end
 end
 
-local old_GUI = _G.GUI
-_G.GUI = GUI
 while table.count(elements_raw) > 0 do
 	for name, _ in pairs(elements_raw) do
 		doElement(name)

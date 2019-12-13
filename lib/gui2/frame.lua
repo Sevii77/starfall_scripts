@@ -1,3 +1,5 @@
+local GUI = GUI
+
 local tri = {
 	{x = 0, y = 0},
 	{x = -1, y = 0},
@@ -36,7 +38,7 @@ return {
 		_min_x = 50,
 		_min_y = 50,
 		_dragcorner_size = 10,
-		_dragbar_size = 2,
+		_dragbar_size = 3,
 		_animation_speed = false,
 		
 		_dragable = true,
@@ -112,6 +114,13 @@ return {
 					self._h = math.lerp(progress, self._true_height, self._title_height)
 					self._size.y = self._h
 					
+					if progress == 1 then
+						self._inner.enabled = false
+					elseif not self._closed and not self._inner.enabled then
+						self._inner.enabled = true
+					end
+					
+					self._calculate_bounding = true
 					self:_calculateInner()
 					self:_updateDockingParent()
 					self:_changed()
@@ -135,7 +144,7 @@ return {
 					self._grab = {move = true, x = x, y = y}
 					self:_cursorMode(GUI.CURSORMODE.DRAGGING)
 				end
-			elseif self._resizeable then
+			elseif self._resizeable and not self._closed then
 				local ox, oy = self._w - x, self._h - y
 				local b = self._dragbar_size
 				

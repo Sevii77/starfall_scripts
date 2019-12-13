@@ -1,3 +1,5 @@
+local GUI = GUI
+
 return {
 	constructor = function(self)
 		self._pos = Vector()
@@ -19,8 +21,8 @@ return {
 		_y = 0,
 		
 		_size = true,
-		_w = 0,
-		_h = 0,
+		_w = 30,
+		_h = 30,
 		
 		-- Originals, unaffected by docking scaling
 		_ow = 0,
@@ -54,19 +56,62 @@ return {
 		
 		------------------------------
 		
-		_calculateVisible = function(self)
-			local x, y, w, h = self._x, self._y, self._w, self._h
-			local pw, ph
-			local p = self.parent
+		_calculate_global_pos = true,
+		_calculateGlobalPos = function(self)
+			local object = self._gui._object_refs[self]
+			local pos = {x = self._x, y = self._y}
 			
+			local p = self.parent
+			while p do
+				pos.x = pos.x + p._x
+				pos.y = pos.y + p._y
+				
+				p = p.parent
+			end
+			
+			object.global_pos = pos
+			
+			for i, child in pairs(object.order) do
+				child:_calculateGlobalPos()
+			end
+		end,
+		
+		_calculate_bounding = true,
+		_calculateBounding = function(self)
+			local object = self._gui._object_refs[self]
+			local x, y, w, h, pw, ph = self._x, self._y, self._w, self._h, 0, 0
+			
+			local p = self.parent
 			if p then
 				pw, ph = p._w, p._h
 			else
 				pw, ph = self._gui._w, self._gui._h
 			end
 			
-			self._visible = x < pw and y < ph and x + w > 0 and y + h > 0
+			local b = {
+				x = math.max(0, x) - x,
+				y = math.max(0, y) - y,
+				x2 = math.min(pw, x + w) - x,
+				y2 = math.min(ph, y + h) - y
+			}
+			
+			self._visible = b.x < w and b.y < h and b.x2 > 0 and b.y2 > 0
+			object.bounding = b
 		end,
+		
+		-- _calculateVisible = function(self)
+		-- 	local x, y, w, h = self._x, self._y, self._w, self._h
+		-- 	local pw, ph
+		-- 	local p = self.parent
+			
+		-- 	if p then
+		-- 		pw, ph = p._w, p._h
+		-- 	else
+		-- 		pw, ph = self._gui._w, self._gui._h
+		-- 	end
+			
+		-- 	self._visible = x < pw and y < ph and x + w > 0 and y + h > 0
+		-- end,
 		
 		------------------------------
 		-- Styles
@@ -185,7 +230,10 @@ return {
 						child._x = x
 						child._y = y
 						
-						child:_calculateVisible()
+						child._calculate_global_pos = true
+						child._calculate_bounding = true
+						-- child:_calculateGlobalPos()
+						-- child:_calculateBounding()
 						child:_posChanged()
 						child:_changed()
 					end
@@ -200,7 +248,8 @@ return {
 						child._w = w
 						child._h = h
 						
-						child:_calculateVisible()
+						child._calculate_bounding = true
+						-- child:_calculateBounding()
 						child:_sizeChanged()
 						child:_updateDocking()
 						child:_changed()
@@ -242,6 +291,20 @@ return {
 		_draw = function(self, dt)
 			self:onDraw(self._w, self._h)
 			self:onDrawOver(self._w, self._h)
+		end,
+		
+		_postthink = function(self)
+			-- Used to only do things once, for example instead of calling something directorly from setters set a flag to do it once
+			
+			if self._calculate_global_pos then
+				self._calculate_global_pos = false
+				self:_calculateGlobalPos()
+			end
+			
+			if self._calculate_bounding then
+				self._calculate_bounding = false
+				self:_calculateBounding()
+			end
 		end,
 		
 		_think = function(self, dt, cx, cy)
@@ -314,7 +377,43 @@ return {
 		
 		parent = {
 			set = function(self, parent)
-				self._gui._parent_queue[self] = parent
+				local obj = self
+				local self = self._gui
+				local object = self._object_refs[obj]
+				if object.parent then
+					local parent_object = self._object_refs[object.parent]
+					parent_object.children[obj] = nil
+					
+					for i, o in pairs(parent_object.order) do
+						if o == obj then
+							table.remove(parent_object.order, i)
+							
+							break
+						end
+					end
+				else
+					self._objects[obj] = nil
+					
+					for i, o in pairs(self._render_order) do
+						if o == obj then
+							table.remove(self._render_order, i)
+							
+							break
+						end
+					end
+				end
+				
+				if parent then
+					self._object_refs[parent].children[obj] = object
+					table.insert(self._object_refs[parent].order, 1, obj)
+				else
+					self._objects[obj] = object
+					table.insert(self._render_order, 1, obj)
+				end
+				
+				object.parent = parent
+				
+				-- self._gui._parent_queue[self] = parent
 			end,
 			
 			get = function(self)
@@ -350,7 +449,10 @@ return {
 					self._y = x.y
 				end
 				
-				self:_calculateVisible()
+				self._calculate_global_pos = true
+				self._calculate_bounding = true
+				-- self:_calculateGlobalPos()
+				-- self:_calculateBounding()
 				self:_posChanged(ox, oy)
 				self:_changed()
 			end,
@@ -367,7 +469,10 @@ return {
 				self._pos.x = x
 				self._x = x
 				
-				self:_calculateVisible()
+				self._calculate_global_pos = true
+				self._calculate_bounding = true
+				-- self:_calculateGlobalPos()
+				-- self:_calculateBounding()
 				self:_posChanged(ox, self._y)
 				self:_changed()
 			end,
@@ -384,7 +489,10 @@ return {
 				self._pos.y = y
 				self._y = y
 				
-				self:_calculateVisible()
+				self._calculate_global_pos = true
+				self._calculate_bounding = true
+				-- self:_calculateGlobalPos()
+				-- self:_calculateBounding()
 				self:_posChanged(self._x, oy)
 				self:_changed()
 			end,
@@ -415,7 +523,8 @@ return {
 					self._oh = w.y
 				end
 				
-				self:_calculateVisible()
+				self._calculate_bounding = true
+				-- self:_calculateBounding()
 				self:_sizeChanged(ow, oh)
 				self:_updateDockingParent()
 				self:_changed()
@@ -434,7 +543,8 @@ return {
 				self._w = w
 				self._ow = w
 				
-				self:_calculateVisible()
+				self._calculate_bounding = true
+				-- self:_calculateBounding()
 				self:_sizeChanged(ow, self._h)
 				self:_updateDockingParent()
 				self:_changed()
@@ -453,7 +563,8 @@ return {
 				self._h = h
 				self._oh = h
 				
-				self:_calculateVisible()
+				self._calculate_bounding = true
+				-- self:_calculateBounding()
 				self:_sizeChanged(self._w, oh)
 				self:_updateDockingParent()
 				self:_changed()

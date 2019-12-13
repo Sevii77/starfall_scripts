@@ -1,3 +1,5 @@
+local GUI = GUI
+
 local circle = {}
 for i = 1, 32 do
 	local rad = i / 16 * math.pi

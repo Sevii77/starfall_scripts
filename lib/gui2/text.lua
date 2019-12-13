@@ -1,7 +1,9 @@
+local GUI = GUI
+
 return {
 	inherit = "base",
 	constructor = function(self)
-		self._true_pos = self.pos
+		self._spos = Vector()
 	end,
 	
 	----------------------------------------
@@ -13,16 +15,29 @@ return {
 		_text_alignment_x = 1,
 		_text_alignment_y = 1,
 		
+		_spos = true,
+		_sx = 0,
+		_sy = 0,
+		
 		------------------------------
 		
-		_textChanged = function(self)
+		_updateBounds = function(self)
 			render.setFont(self.font)
 			local w, h = render.getTextSize(self._text)
 			local ax, ay = self._text_alignment_x, self._text_alignment_y
 			
-			self._pos = Vector(self._x - (ax == 0 and 0 or (ax == 1 and w / 2 or w)), self._y - (ay == 3 and 0 or (ay == 1 and h / 2 or h)))
-			self._size = Vector(w, h)
-			self._w, self._h = w, h
+			local x = self._sx - (ax == 0 and 0 or (ax == 1 and w / 2 or w))
+			local y = self._sy - (ay == 3 and 0 or (ay == 1 and h / 2 or h))
+			
+			self._pos.x = x
+			self._pos.y = y
+			self._x = x
+			self._y = y
+			
+			self._size.x = w
+			self._size.y = h
+			self._w = w
+			self._h = h
 		end,
 		
 		------------------------------
@@ -40,44 +55,67 @@ return {
 	
 	properties = {
 		pos = {
-			set = function(self, pos)
-				self._x = pos.x
-				self._y = pos.y
+			set = function(self, x, y)
+				local ox, oy = self._x, self._y
 				
+				if y then
+					self._spos.x = x
+					self._spos.y = y
+					self._sx = x
+					self._sy = y
+				else
+					self._spos = x
+					self._sx = x.x
+					self._sy = x.y
+				end
+				
+				self._calculate_global_pos = true
+				self._calculate_bounding = true
+				self:_updateBounds()
+				self:_posChanged(ox, oy)
 				self:_changed()
-				self:_textChanged()
 			end,
 			
 			get = function(self)
-				return Vector(self._x, self._y)
+				return self._spos
 			end
 		},
 		
 		x = {
 			set = function(self, x)
-				self._pos.x = x
-				self._x = x
+				local ox = self._x
 				
+				self._spos.x = x
+				self._sx = x
+				
+				self._calculate_global_pos = true
+				self._calculate_bounding = true
+				self:_updateBounds()
+				self:_posChanged(ox, self._y)
 				self:_changed()
-				self:_textChanged()
 			end,
 			
 			get = function(self)
-				return self._x
+				return self._sx
 			end
 		},
 		
 		y = {
 			set = function(self, y)
-				self._pos.y = y
-				self._y = y
+				local oy = self._y
 				
+				self._spos.y = y
+				self._sy = y
+				
+				self._calculate_global_pos = true
+				self._calculate_bounding = true
+				self:_updateBounds()
+				self:_posChanged(self._x, oy)
 				self:_changed()
-				self:_textChanged()
 			end,
 			
 			get = function(self)
-				return self._y
+				return self._sy
 			end
 		},
 		
@@ -108,7 +146,7 @@ return {
 				self._text = text
 				
 				self:_changed(true)
-				self:_textChanged()
+				self:_updateBounds()
 			end,
 			
 			get = function(self)
@@ -121,7 +159,7 @@ return {
 				self._font = font
 				
 				self:_changed(true)
-				self:_textChanged()
+				self:_updateBounds()
 			end,
 			
 			get = function(self)
@@ -137,7 +175,8 @@ return {
 			end,
 			
 			get = function(self)
-				return self._text_color or self._theme.primaryTextColor
+				local clr = self._text_color
+				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryTextColor
 			end
 		},
 		
@@ -146,7 +185,7 @@ return {
 				self._text_alignment_x = x
 				
 				self:_changed(true)
-				self:_textChanged()
+				self:_updateBounds()
 			end,
 			
 			get = function(self)
@@ -159,7 +198,7 @@ return {
 				self._text_alignment_y = y
 				
 				self:_changed(true)
-				self:_textChanged()
+				self:_updateBounds()
 			end,
 			
 			get = function(self)
@@ -173,7 +212,7 @@ return {
 				self._text_alignment_y = y
 				
 				self:_changed(true)
-				self:_textChanged()
+				self:_updateBounds()
 			end,
 			
 			get = function(self)

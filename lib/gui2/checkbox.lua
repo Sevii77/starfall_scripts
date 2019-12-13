@@ -1,3 +1,5 @@
+local GUI = GUI
+
 local circle = {}
 for i = 1, 32 do
 	local rad = i / 16 * math.pi
@@ -111,7 +113,7 @@ return {
 					
 					-- Pill
 					local m = Matrix()
-					m:setTranslation(Vector(h * 0.1))
+					m:setTranslation(Vector(h * 0.1, h * 0.1))
 					m:setScale(Vector(h * 0.8))
 					render.pushMatrix(m)
 					render.setColor(GUI.lerpColor(self.inactiveColor, self.mainColor, self:getAnimation("state")))
@@ -152,7 +154,7 @@ return {
 					local hover = self:getAnimation("hover")
 					
 					local m = Matrix()
-					m:setTranslation(Vector(h / 2))
+					m:setTranslation(Vector(h / 2, h / 2))
 					render.pushMatrix(m)
 					render.setColor(GUI.lerpColor(self.activeColor, self.hoverColor, hover))
 					render.drawPoly(self._box_poly)

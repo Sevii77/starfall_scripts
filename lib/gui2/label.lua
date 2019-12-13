@@ -1,3 +1,5 @@
+local GUI = GUI
+
 return {
 	inherit = "container",
 	constructor = function(self)
