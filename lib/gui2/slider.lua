@@ -97,8 +97,8 @@ return {
 				_think = function(self, dt, cx, cy)
 					local anim_speed = dt * self.animationSpeed
 					
-					self:_animationUpdate("hover", self._hovering, anim_speed)
-					self:_animationUpdate("hold", self._holding, anim_speed)
+					self:_animationUpdate("hover", self._hovering, anim_speed, true)
+					self:_animationUpdate("hold", self._holding, anim_speed, self._draw_background)
 					
 					if self._holding then
 						if cx then
@@ -109,7 +109,7 @@ return {
 							
 							if self._progress ~= last then
 								self:onChange(self._value)
-								self:_changed(true)
+								self:_changed(self._draw_background)
 							end
 						end
 						
@@ -154,8 +154,8 @@ return {
 				_think = function(self, dt, cx, cy)
 					local anim_speed = dt * self.animationSpeed
 					
-					self:_animationUpdate("hover", self._hovering, anim_speed)
-					self:_animationUpdate("hold", self._holding, anim_speed)
+					self:_animationUpdate("hover", self._hovering, anim_speed, true)
+					self:_animationUpdate("hold", self._holding, anim_speed, true)
 					
 					if self._holding then
 						if cx then
@@ -320,6 +320,8 @@ return {
 		drawBackground = {
 			set = function(self, state)
 				self._draw_background = state
+				
+				self:_changed(true)
 			end,
 			
 			get = function(self)
@@ -378,7 +380,7 @@ return {
 			set = function(self, round)
 				self._round = round
 				
-				self:_changed(true)
+				-- self:_changed(true)
 			end,
 			
 			get = function(self)

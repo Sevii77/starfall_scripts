@@ -145,7 +145,7 @@ return {
 			set = function(self, text)
 				self._text = text
 				
-				self:_changed(true)
+				self:_changed()
 				self:_updateBounds()
 			end,
 			
@@ -158,7 +158,7 @@ return {
 			set = function(self, font)
 				self._font = font
 				
-				self:_changed(true)
+				self:_changed()
 				self:_updateBounds()
 			end,
 			
@@ -171,7 +171,7 @@ return {
 			set = function(self, color)
 				self._text_color = color
 				
-				self:_changed(true)
+				self:_changed()
 			end,
 			
 			get = function(self)
@@ -184,7 +184,7 @@ return {
 			set = function(self, x)
 				self._text_alignment_x = x
 				
-				self:_changed(true)
+				self:_changed()
 				self:_updateBounds()
 			end,
 			
@@ -197,7 +197,7 @@ return {
 			set = function(self, y)
 				self._text_alignment_y = y
 				
-				self:_changed(true)
+				self:_changed()
 				self:_updateBounds()
 			end,
 			
@@ -211,7 +211,7 @@ return {
 				self._text_alignment_x = x
 				self._text_alignment_y = y
 				
-				self:_changed(true)
+				self:_changed()
 				self:_updateBounds()
 			end,
 			

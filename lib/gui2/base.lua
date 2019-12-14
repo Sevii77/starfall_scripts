@@ -12,6 +12,7 @@ return {
 		_gui = true, -- Set in the core when created
 		_theme = true, -- Set in the core when created
 		
+		_is_controll_element = true,
 		_enabled = true,
 		_translucent = false, -- Allow mouse rays to pass through
 		_visible = true,
@@ -59,17 +60,18 @@ return {
 		_calculate_global_pos = true,
 		_calculateGlobalPos = function(self)
 			local object = self._gui._object_refs[self]
-			local pos = {x = self._x, y = self._y}
+			local x, y = self._x, self._y
 			
 			local p = self.parent
 			while p do
-				pos.x = pos.x + p._x
-				pos.y = pos.y + p._y
+				x = x + p._x
+				y = y + p._y
 				
 				p = p.parent
 			end
 			
-			object.global_pos = pos
+			object.global_pos.x = x
+			object.global_pos.y = y
 			
 			for i, child in pairs(object.order) do
 				child:_calculateGlobalPos()
@@ -79,24 +81,30 @@ return {
 		_calculate_bounding = true,
 		_calculateBounding = function(self)
 			local object = self._gui._object_refs[self]
-			local x, y, w, h, pw, ph = self._x, self._y, self._w, self._h, 0, 0
+			local x, y, w, h = self._x, self._y, self._w, self._h
+			local px, py, pw, ph = 0, 0, 0, 0
 			
 			local p = self.parent
 			if p then
-				pw, ph = p._w, p._h
+				local b = self._gui._object_refs[p].bounding
+				px, py, pw, ph = b.x, b.y, b.x2, b.y2
 			else
 				pw, ph = self._gui._w, self._gui._h
 			end
 			
 			local b = {
-				x = math.max(0, x) - x,
-				y = math.max(0, y) - y,
+				x = math.max(px, x) - x,
+				y = math.max(py, y) - y,
 				x2 = math.min(pw, x + w) - x,
 				y2 = math.min(ph, y + h) - y
 			}
 			
 			self._visible = b.x < w and b.y < h and b.x2 > 0 and b.y2 > 0
 			object.bounding = b
+			
+			for i, child in pairs(object.order) do
+				child:_calculateBounding()
+			end
 		end,
 		
 		-- _calculateVisible = function(self)
@@ -132,7 +140,7 @@ return {
 			return self._animations[name] or 0
 		end,
 		
-		_animationUpdate = function(self, name, state, amount)
+		_animationUpdate = function(self, name, state, amount, simple_change)
 			local anim = self._animations[name] or 0
 			local changed = false
 			
@@ -141,13 +149,13 @@ return {
 					anim = math.min(1, anim + amount)
 					changed = true
 					
-					self:_changed()
+					self:_changed(simple_change)
 				end
 			elseif anim > 0 then
 				anim = math.max(0, anim - amount)
 				changed = true
 				
-				self:_changed()
+				self:_changed(simple_change)
 			end
 			
 			self._animations[name] = anim
@@ -270,7 +278,7 @@ return {
 			--[[
 				called whenever it needs to be redrawn
 				
-				simple: is true if only the current element needs to be redrawn
+				simple: redraw the current element only, dont clear anything
 			]]
 		end,
 		
@@ -454,7 +462,20 @@ return {
 				-- self:_calculateGlobalPos()
 				-- self:_calculateBounding()
 				self:_posChanged(ox, oy)
-				self:_changed()
+				-- self:_changed()
+				
+				local p = self.parent
+				while p do
+					if not p._is_controll_element then break end
+					
+					p = p.parent
+				end
+				
+				if p then
+					p:_changed(true)
+				else
+					self:_changed()
+				end
 			end,
 			
 			get = function(self)
@@ -474,7 +495,20 @@ return {
 				-- self:_calculateGlobalPos()
 				-- self:_calculateBounding()
 				self:_posChanged(ox, self._y)
-				self:_changed()
+				-- self:_changed()
+				
+				local p = self.parent
+				while p do
+					if not p._is_controll_element then break end
+					
+					p = p.parent
+				end
+				
+				if p then
+					p:_changed(true)
+				else
+					self:_changed()
+				end
 			end,
 			
 			get = function(self)
@@ -494,7 +528,20 @@ return {
 				-- self:_calculateGlobalPos()
 				-- self:_calculateBounding()
 				self:_posChanged(self._x, oy)
-				self:_changed()
+				-- self:_changed()
+				
+				local p = self.parent
+				while p do
+					if not p._is_controll_element then break end
+					
+					p = p.parent
+				end
+				
+				if p then
+					p:_changed(true)
+				else
+					self:_changed()
+				end
 			end,
 			
 			get = function(self)
@@ -506,6 +553,7 @@ return {
 		
 		size = {
 			set = function(self, w, h)
+				
 				local ow, oh = self._w, self._h
 				
 				if h then
@@ -527,7 +575,7 @@ return {
 				-- self:_calculateBounding()
 				self:_sizeChanged(ow, oh)
 				self:_updateDockingParent()
-				self:_changed()
+				self:_changed(self._w >= ow and self._h >= oh)
 			end,
 			
 			get = function(self)
@@ -547,7 +595,7 @@ return {
 				-- self:_calculateBounding()
 				self:_sizeChanged(ow, self._h)
 				self:_updateDockingParent()
-				self:_changed()
+				self:_changed(w >= ow)
 			end,
 			
 			get = function(self)
@@ -567,7 +615,7 @@ return {
 				-- self:_calculateBounding()
 				self:_sizeChanged(self._w, oh)
 				self:_updateDockingParent()
-				self:_changed()
+				self:_changed(h >= oh)
 			end,
 			
 			get = function(self)
@@ -585,7 +633,7 @@ return {
 					self[k] = v
 				end
 				
-				self:_changed(true)
+				self:_changed()
 			end,
 			
 			get = function(self)

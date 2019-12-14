@@ -321,17 +321,27 @@ GUI = class {
 		_cursor_mode = 0,
 		_rtid = "",
 		_redraw = {},
+		_redraw_order = {},
 		_redraw_all = false,
+		_allow_draw =false,
 		
-		_max_fps = 60,
+		_max_fps = 40,
 		_last_update = 0,
 		_deltatime = 0,
 		
 		------------------------------
 		
-		_changed = function(self, object, simple)
-			-- self._redraw[object] = simple and true or false
-			self._redraw_all = true
+		_changed = function(self, obj, simple)
+			if self._redraw_all then return end
+			
+			if simple then
+				if not self._redraw[obj] then
+					self._redraw[obj] = true
+					table.insert(self._redraw_order, obj)
+				end
+			else
+				self._redraw_all = true
+			end
 		end,
 		
 		------------------------------
@@ -357,7 +367,7 @@ GUI = class {
 				order = {},
 				-- global_bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
 				bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
-				global_pos = {x = 0, y = 0},
+				global_pos = Vector(),
 				cursor = {x = 0, y = 0}
 			}
 			
@@ -392,16 +402,21 @@ GUI = class {
 		end,
 		
 		render = function(self)
-			if self._redraw_all then
+			if self._allow_draw then
 				local deltatime = self._deltatime
 				local sx, sy = 1024 / self._w, 1024 / self._h
 				local s = Vector(sx, sy)
 				
-				local function draw(object, parentpos)
+				local m = Matrix()
+				m:setScale(s)
+				render.pushMatrix(m, true)
+				render.selectRenderTarget(self._rtid)
+				
+				local function drawobject(object)
 					local obj = object.object
 					if not obj._enabled or not obj._visible then return end
 					
-					local pos = parentpos + obj._pos
+					local pos = object.global_pos
 					local m = Matrix()
 					m:setTranslation(pos)
 					render.pushMatrix(m)
@@ -423,29 +438,56 @@ GUI = class {
 					end
 					
 					render.popMatrix()
-					
-					for i = #object.order, 1, -1 do
-						draw(object.children[object.order[i]], pos)
-					end
 				end
 				
-				local m = Matrix()
-				m:setScale(s)
-				render.pushMatrix(m, true)
-				render.selectRenderTarget(self._rtid)
-				render.clear(clearcolor)
-				for i = #self._render_order, 1, -1 do
-					draw(self._objects[self._render_order[i]], Vector())
+				if self._redraw_all then
+					local function draw(object)
+						drawobject(object)
+						
+						for i = #object.order, 1, -1 do
+							draw(object.children[object.order[i]])
+						end
+					end
+					
+					render.clear(clearcolor)
+					for i = #self._render_order, 1, -1 do
+						draw(self._objects[self._render_order[i]])
+					end
+					
+					self._redraw = {}
+					self._redraw_order = {}
+					self._redraw_all = false
+				elseif table.count(self._redraw) > 0 then
+					-- TODO: Improve :D
+					
+					-- First add all children of elements that are being redrawn
+					local done = {}
+					local redraw = {}
+					local function add(objs)
+						for _, obj in pairs(objs) do
+							if not done[obj] then
+								done[obj] = true
+								
+								local object = self._object_refs[obj]
+								table.insert(redraw, object)
+								add(object.order)
+							end
+						end
+					end
+					
+					add(self._redraw_order)
+					
+					-- Draw
+					for _, object in pairs(redraw) do
+						drawobject(object)
+					end
+					
+					self._redraw = {}
+					self._redraw_order = {}
 				end
+				
 				render.selectRenderTarget()
 				render.popMatrix()
-				
-				self._redraw = {}
-				self._redraw_all = false
-			elseif table.count(self._redraw) > 0 then
-				-- TODO :D
-				
-				self._redraw = {}
 			end
 			
 			render.setRenderTargetTexture(self._rtid)
@@ -605,6 +647,7 @@ GUI = class {
 			local deltatime = t - self._last_update
 			self._last_update = t
 			self._deltatime = deltatime
+			self._allow_draw = true
 			
 			-- Remove objects
 			if table.count(self._remove_queue) > 0 then
@@ -806,6 +849,10 @@ GUI = class {
 					self._focus_object.object:_hoverStart()
 				end
 			end
+		end,
+		
+		forceRedraw = function(self)
+			self._redraw_all = true
 		end,
 		
 		------------------------------

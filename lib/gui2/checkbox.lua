@@ -102,6 +102,13 @@ return {
 		
 		_styles = {
 			{
+				_think = function(self, dt)
+					local anim_speed = dt * self.animationSpeed
+					
+					self:_animationUpdate("hover", self._hovering, anim_speed, true)
+					self:_animationUpdate("state", self._state, anim_speed, self._draw_background)
+				end,
+				
 				onDraw = function(self, w, h)
 					render.setMaterial()
 					
@@ -141,6 +148,13 @@ return {
 			},
 			
 			{
+				_think = function(self, dt)
+					local anim_speed = dt * self.animationSpeed
+					
+					self:_animationUpdate("hover", self._hovering, anim_speed, true)
+					self:_animationUpdate("state", self._state, anim_speed, true)
+				end,
+				
 				onDraw = function(self, w, h)
 					render.setMaterial()
 					
@@ -181,10 +195,7 @@ return {
 		------------------------------
 		
 		_think = function(self, dt)
-			local anim_speed = dt * self.animationSpeed
 			
-			self:_animationUpdate("hover", self._hovering, anim_speed)
-			self:_animationUpdate("state", self._state, anim_speed)
 		end,
 		
 		_press = function(self)
@@ -298,6 +309,8 @@ return {
 		drawBackground = {
 			set = function(self, state)
 				self._draw_background = state
+				
+				self:_changed(state)
 			end,
 			
 			get = function(self)

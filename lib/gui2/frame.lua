@@ -68,7 +68,6 @@ return {
 		
 		_sizeChanged = function(self)
 			self:_calculateInner()
-			-- self:_createShapePoly()
 			
 			self._true_height = self._h
 		end,
@@ -105,10 +104,10 @@ return {
 				end
 			end
 			
-			self:_animationUpdate("close_hover", self._close_hovering, dt * self.animationSpeed)
+			self:_animationUpdate("close_hover", self._close_hovering, dt * self.animationSpeed, true)
 			
 			if self._collapse_on_close then
-				local changed, progress = self:_animationUpdate("collapse", self._closed, dt * self.animationSpeed)
+				local changed, progress = self:_animationUpdate("collapse", self._closed, dt * self.animationSpeed, not self._closed)
 				
 				if changed then
 					self._h = math.lerp(progress, self._true_height, self._title_height)

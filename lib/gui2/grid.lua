@@ -20,6 +20,9 @@ return {
 		_item_scaling_x = true,
 		_item_scaling_y = true,
 		
+		_content_size_x = 0,
+		_content_size_y = 0,
+		
 		------------------------------
 		
 		_applyGridding = function(self, start_index)
@@ -47,6 +50,9 @@ return {
 				obj.y = y
 				obj.w = w
 				obj.h = h
+				
+				self._content_size_x = x + w
+				self._content_size_y = y + h
 			end
 		end,
 		
@@ -240,6 +246,20 @@ return {
 			
 			get = function(self)
 				return self._item_scaling_y
+			end
+		},
+		
+		------------------------------
+		
+		contentWidth = {
+			get = function(self)
+				return self._content_size_x
+			end
+		},
+		
+		contentHeight = {
+			get = function(self)
+				return self._content_size_y
 			end
 		}
 	}

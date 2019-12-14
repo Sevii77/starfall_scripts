@@ -22,73 +22,13 @@ return {
 	----------------------------------------
 	
 	data = {
+		_is_controll_element = false,
+		
 		_corner_style = {},
 		_corner_size = {},
 		_border_size = false,
 		
 		_main_color = false,
-		
-		-- _mask_poly = nil,
-		
-		------------------------------
-		
-		-- _postCreateShapePoly = function(self)
-		-- 	-- Used by elements that inherit and want to adjust things after the shape poly has been created
-		-- end,
-		
-		-- _createShapePoly = function(self)
-		-- 	local stl, str, sbr, sbl = self:getCornerStyle()
-		-- 	local ztl, ztr, zbr, zbl = self:getCornerSize()
-		-- 	local w, h = self._w, self._h
-		-- 	local poly = {}
-			
-		-- 	-- Top Left
-		-- 	if stl == 0 then
-		-- 		table.insert(poly, {x = 0, y = 0})
-		-- 	else
-		-- 		for i = 0, 9, stl == 1 and 1 or 9 do
-		-- 			local rad = i / 18 * math.pi
-		-- 			table.insert(poly, {x = ztl - math.cos(rad) * ztl, y = ztl - math.sin(rad) * ztl})
-		-- 		end
-		-- 	end
-			
-		-- 	-- Top Right
-		-- 	if str == 0 then
-		-- 		table.insert(poly, {x = w, y = 0})
-		-- 	else
-		-- 		for i = 9, 18, str == 1 and 1 or 9 do
-		-- 			local rad = i / 18 * math.pi
-		-- 			table.insert(poly, {x = w - ztr - math.cos(rad) * ztr, y = ztr - math.sin(rad) * ztr})
-		-- 		end
-		-- 	end
-			
-		-- 	-- Bottom Right
-		-- 	if sbr == 0 then
-		-- 		table.insert(poly, {x = w, y = h})
-		-- 	else
-		-- 		for i = 18, 27, sbr == 1 and 1 or 9 do
-		-- 			local rad = i / 18 * math.pi
-		-- 			table.insert(poly, {x = w - zbr - math.cos(rad) * zbr, y = h - zbr - math.sin(rad) * zbr})
-		-- 		end
-		-- 	end
-			
-		-- 	-- Bottom Left
-		-- 	if sbl == 0 then
-		-- 		table.insert(poly, {x = 0, y = h})
-		-- 	else
-		-- 		for i = 27, 36, sbl == 1 and 1 or 9 do
-		-- 			local rad = i / 18 * math.pi
-		-- 			table.insert(poly, {x = zbl - math.cos(rad) * zbl, y = h - zbl - math.sin(rad) * zbl})
-		-- 		end
-		-- 	end
-			
-		-- 	self._mask_poly = poly
-		-- 	self:_postCreateShapePoly()
-		-- end,
-		
-		-- _sizeChanged = function(self)
-		-- 	self:_createShapePoly()
-		-- end,
 		
 		------------------------------
 		
@@ -195,7 +135,6 @@ return {
 					self._corner_style = {tl = tl, tr = tr or tl, br = br or tl, bl = bl or tl}
 				end
 				
-				-- self:_createShapePoly()
 				self:_changed(true)
 			end,
 			
@@ -215,7 +154,6 @@ return {
 					self._corner_size = {tl = tl, tr = tr or tl, br = br or tl, bl = bl or tl}
 				end
 				
-				-- self:_createShapePoly()
 				self:_changed(true)
 			end,
 			

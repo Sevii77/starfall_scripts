@@ -32,9 +32,9 @@ return {
 		_think = function(self, dt)
 			local anim_speed = dt * self.animationSpeed
 			
-			self:_animationUpdate("hover", self._hovering, anim_speed)
+			self:_animationUpdate("hover", self._hovering, anim_speed, true)
 			
-			local _, p = self:_animationUpdate("click", self._click_anim, anim_speed)
+			local _, p = self:_animationUpdate("click", self._click_anim, anim_speed, true)
 			if p == 1 and not self._click and not self._click_right then
 				self._click_anim = false
 			end
@@ -102,7 +102,6 @@ return {
 			-- Container
 			render.setMaterial()
 			
-			-- render.setColor(GUI.lerpColor(GUI.lerpColor(self.mainColor, self.hoverColor, self:getAnimation("hover")), self.activeColor, p))
 			local clr = GUI.lerpColor(self.mainColor, self.hoverColor, self:getAnimation("hover"))
 			render.setColor(clr)
 			render.drawRect(0, 0, w, h)
