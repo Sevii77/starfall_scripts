@@ -8,20 +8,22 @@ local direct_rendering = false
 
 ------------------------------
 
-GUI = require("../lib/gui2.lua")
+local GUI = require("../lib/gui2.lua")
 local gui = GUI(512, 512)
 
 -- Use this for hud
 --local w, h = render.getGameResolution()
 --local gui = GUI(w, h)
 
+local fancy
 do -- Basic example
 	local body = gui:create("frame")
 	body.pos = Vector(4, 56)
-	body.size = Vector(250, 400)
+	body.size = Vector(250, 250)
 	body.title = "Fancy Example"
 	body.collapseOnClose = true
 	body.minSize = Vector(150, 250)
+	fancy = body
 	
 	do
 		local page = gui:create("base", body.inner)
@@ -64,6 +66,7 @@ do -- Basic example
 				gui.theme.secondaryColor      = Color(value, 0.6, 0.6):hsvToRGB()
 				gui.theme.secondaryColorLight = Color(value, 0.4, 0.6):hsvToRGB()
 				gui.theme.secondaryColorDark  = Color(value, 0.6, 0.4):hsvToRGB()
+				gui:forceRedraw()
 			end
 			
 			local label = gui:create("label")
@@ -141,18 +144,25 @@ do -- Basic example
 		end
 		
 		do -- Main grid
-			local grid = gui:create("grid", page)
+			local scrollframe = gui:create("scrollframe", page)
+			scrollframe.dock = GUI.DOCK.FILL
+			scrollframe.scrollbarY = true
+			
+			local grid = gui:create("grid")
+			-- grid.w = 100
 			grid.dock = GUI.DOCK.FILL
 			grid:setDockMargin(10, 10, 10, 10)
 			grid.spacing = Vector(0, 0)
 			grid.itemCountX = 1
 			grid.itemScalingY = false
 			grid.itemHeight = 20
+			scrollframe.content = grid
 			
 			do -- Debug checkbox
 				local debug = gui:create("checkbox")
 				debug.style = 2
 				debug.text = "Debug Rendering"
+				debug.state = debug_rendering
 				debug:setCornerStyle(1, 1, 0, 0)
 				grid:addItem(debug)
 				debug.onChange = function(self, state)
@@ -162,6 +172,7 @@ do -- Basic example
 				local masks = gui:create("checkbox")
 				masks.style = 2
 				masks.text = "Masks Rendering"
+				masks.state = mask_rendering
 				masks.cornerStyle = 0
 				grid:addItem(masks)
 				masks.onChange = function(self, state)
@@ -171,6 +182,7 @@ do -- Basic example
 				local direct = gui:create("checkbox")
 				direct.style = 2
 				direct.text = "Direct Rendering"
+				direct.state = direct_rendering
 				direct.cornerStyle = 0
 				grid:addItem(direct)
 				direct.onChange = function(self, state)
@@ -240,6 +252,8 @@ do -- Basic example
 				grid:addItem(slider)
 				slider.onChange = function(self, value)
 					grid.itemHeight = value
+					grid.h = grid.contentHeight
+					scrollframe:contentSizeChanged()
 				end
 				
 				local label = gui:create("label")
@@ -283,6 +297,40 @@ do -- Basic example
 					label:setCornerStyle(0, 0, 0, 0)
 				end
 			end
+			
+			grid.h = grid.contentHeight
+			scrollframe:contentSizeChanged()
+		end
+	end
+end
+
+do -- Different direction elements
+	local body = gui:create("frame")
+	body.pos = Vector(4, 310)
+	body.size = Vector(250, 146)
+	body.title = "Vertical / Horizontal"
+	body.collapseOnClose = true
+	body.minSize = Vector(150, 100)
+	
+	local scrollframe = gui:create("scrollframe", body.inner)
+	scrollframe.dock = GUI.DOCK.FILL
+	scrollframe:setDockMargin(5, 5, 5, 5)
+	scrollframe.scrollbarX = true
+	scrollframe.scrollbarY = true
+	
+	do
+		local content = gui:create("container")
+		content.size = Vector(400, 400)
+		content.dock = GUI.DOCK.FILL
+		content:setDockMargin(5, 5, 5, 5)
+		scrollframe.content = content
+		
+		for i = 1, 10 do
+			local button = gui:create("button", content)
+			button.pos = Vector(i * 30)
+			button.text = tostring(i)
+			
+			fancy = button
 		end
 	end
 end
@@ -342,7 +390,6 @@ do -- Grid
 	for i = 1, 10 do
 		local button = gui:create("button")
 		button.text = tostring(i)
-		
 		grid:addItem(button)
 	end
 end
@@ -353,7 +400,7 @@ hook.add("render", "", function()
 	render.setBackgroundColor(Color(0, 0, 0, 0))
 	
 	gui:think()
-	
+	gui:render()
 	if direct_rendering then
 		gui:renderDirect()
 	else
@@ -371,6 +418,14 @@ hook.add("render", "", function()
 	
 	render.setRGBA(255, 255, 255, 255)
 	render.drawSimpleText(0, 0, tostring(math.round(quotaAverage() * 1000000)))
+	
+	local object = gui._object_refs[fancy]
+	render.drawText(512, 0, 
+		tostring(object.cursor.x) .. ", " .. tostring(object.cursor.y) .. "\n" ..
+		tostring(object.bounding.x) .. ", " .. tostring(object.bounding.y) .. "\n" ..
+		tostring(object.bounding.x2) .. ", " .. tostring(object.bounding.y2) .. "\n" ..
+		tostring(object.global_pos.x) .. ", " .. tostring(object.global_pos.y) .. "\n"
+	, 2)
 end)
 
 --[[hook.add("drawHUD", "", function()
