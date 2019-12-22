@@ -22,7 +22,7 @@ return {
 	----------------------------------------
 	
 	data = {
-		_is_controll_element = false,
+		_is_visibly_translucent = false,
 		
 		_corner_style = {},
 		_corner_size = {},

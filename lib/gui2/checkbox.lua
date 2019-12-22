@@ -34,7 +34,7 @@ return {
 		_inactive_color = false,
 		_hover_color = false,
 		
-		_draw_background = false,
+		_draw_background = true,
 		_animation_speed = false,
 		_text_alignment_x = 0,
 		
@@ -105,7 +105,7 @@ return {
 				_think = function(self, dt)
 					local anim_speed = dt * self.animationSpeed
 					
-					self:_animationUpdate("hover", self._hovering, anim_speed, true)
+					self:_animationUpdate("hover", self._hovering, anim_speed, self._draw_background)
 					self:_animationUpdate("state", self._state, anim_speed, self._draw_background)
 				end,
 				
@@ -151,8 +151,8 @@ return {
 				_think = function(self, dt)
 					local anim_speed = dt * self.animationSpeed
 					
-					self:_animationUpdate("hover", self._hovering, anim_speed, true)
-					self:_animationUpdate("state", self._state, anim_speed, true)
+					self:_animationUpdate("hover", self._hovering, anim_speed, self._draw_background)
+					self:_animationUpdate("state", self._state, anim_speed, self._draw_background)
 				end,
 				
 				onDraw = function(self, w, h)
@@ -239,6 +239,15 @@ return {
 	----------------------------------------
 	
 	properties = {
+		_is_visibly_translucent = {
+			-- Not that you should ever parent anything to a slider, but just incase it has been done for some reason
+			get = function(self)
+				return not self._draw_background
+			end
+		},
+		
+		------------------------------
+		
 		mainColor = {
 			set = function(self, color)
 				self._main_color = color

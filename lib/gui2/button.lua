@@ -210,6 +210,7 @@ return {
 			set = function(self, state)
 				if self._toggle then
 					self._click = state
+					self._click_anim = state
 					self._cursor = Vector(self._w / 2, self._h / 2)
 				end
 			end,

@@ -1,7 +1,8 @@
 /game/bobsworld4
 /game/exploro
+/game/explore_proto
 /game/osu
 /game/voxel4
 /game/tdrts
-/private/
-/vehicles/
+/private
+/vehicles

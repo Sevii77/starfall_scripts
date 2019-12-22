@@ -12,7 +12,7 @@ return {
 		_gui = true, -- Set in the core when created
 		_theme = true, -- Set in the core when created
 		
-		_is_controll_element = true,
+		_is_visibly_translucent = true, -- Setting this to true means that it will never be used as a starting point to redraw from, setting it to false while not fully drawing can lead to ghosting.
 		_enabled = true,
 		_translucent = false, -- Allow mouse rays to pass through
 		_visible = true,
@@ -28,6 +28,25 @@ return {
 		-- Originals, unaffected by docking scaling
 		_ow = 0,
 		_oh = 0,
+		
+		_first = true,
+		_cells = {},
+		_cells_last = {},
+		
+		------------------------------
+		
+		__tostring = function(self)
+			-- return string.format("%s (%d %d; %dx%d; %s)", self.parent or "()", self._x, self._y, self._w, self._h, self.__type)
+			
+			local c = 0
+			local p = self.parent
+			while p do
+				c = c + 1
+				p = p.parent
+			end
+			
+			return string.format("%d (%d %d; %dx%d; %s)", c, self._x, self._y, self._w, self._h, self.__type)
+		end,
 		
 		------------------------------
 		
@@ -70,8 +89,10 @@ return {
 				p = p.parent
 			end
 			
-			object.global_pos.x = x
-			object.global_pos.y = y
+			object.global_pos_last = self._first and Vector(x, y) or object.global_pos
+			object.global_pos = Vector(x, y)
+			
+			self._calculate_cells = true
 			
 			for i, child in pairs(object.order) do
 				child:_calculateGlobalPos()
@@ -100,10 +121,48 @@ return {
 			}
 			
 			self._visible = b.x < w and b.y < h and b.x2 > 0 and b.y2 > 0
+			object.bounding_last = self._first and b or object.bounding
 			object.bounding = b
+			
+			self._calculate_cells = true
 			
 			for i, child in pairs(object.order) do
 				child:_calculateBounding()
+			end
+		end,
+		
+		_calculate_cells = false,
+		_calculateCells = function(self)
+			self._cells_last = self._cells
+			
+			local p = self.parent
+			local cells, cs = self._gui._cells, self._gui._cell_size
+			for _, cell in pairs(self._cells) do
+				table.remove(cells[cell.x][cell.y], table.keyFromValue(cells[cell.x][cell.y], self))
+				-- local tbl = p and cells[x][y].refs[p].children or cells[x][y].objs
+				-- table.remove(tbl, table.keyFromValue(tbl, self))
+			end
+			self._cells = {}
+			
+			local object = self._gui._object_refs[self]
+			if self._visible and self._enabled then
+				local b = object.bounding
+				local xo, yo = object.global_pos.x, object.global_pos.y
+				local miy, may = math.floor((b.y + yo) / cs), math.floor((b.y2 + yo) / cs)
+				for x = math.floor((b.x + xo) / cs), math.floor((b.x2 + xo) / cs) do
+					for y = miy, may do
+						cells[x] = cells[x] or {}
+						cells[x][y] = cells[x][y] or {}
+						table.insert(cells[x][y], self)
+						-- cells[x][y] = cells[x][y] or {refs = {}, objs = {}}
+						-- table.insert(p and cells[x][y].refs[p].children or cells[x][y].objs, {
+						-- 	obj = self,
+						-- 	children = {}
+						-- })
+						-- cells[x][y].refs[self] = cells[x][y].objs[#cells[x][y].objs]
+						table.insert(self._cells, {x = x, y = y})
+					end
+				end
 			end
 		end,
 		
@@ -260,7 +319,7 @@ return {
 						-- child:_calculateBounding()
 						child:_sizeChanged()
 						child:_updateDocking()
-						child:_changed()
+						-- child:_changed()
 					--end
 					
 					if sw == 0 or sh == 0 then
@@ -302,7 +361,7 @@ return {
 		end,
 		
 		_postthink = function(self)
-			-- Used to only do things once, for example instead of calling something directorly from setters set a flag to do it once
+			-- Used to only do things once, for example instead of calling something directly from setters set a flag to do it once
 			
 			if self._calculate_global_pos then
 				self._calculate_global_pos = false
@@ -313,6 +372,13 @@ return {
 				self._calculate_bounding = false
 				self:_calculateBounding()
 			end
+			
+			if self._calculate_cells then
+				self._calculate_cells = false
+				self:_calculateCells()
+			end
+			
+			self._first = false
 		end,
 		
 		_think = function(self, dt, cx, cy)
@@ -462,20 +528,7 @@ return {
 				-- self:_calculateGlobalPos()
 				-- self:_calculateBounding()
 				self:_posChanged(ox, oy)
-				-- self:_changed()
-				
-				local p = self.parent
-				while p do
-					if not p._is_controll_element then break end
-					
-					p = p.parent
-				end
-				
-				if p then
-					p:_changed(true)
-				else
-					self:_changed()
-				end
+				self:_changed()
 			end,
 			
 			get = function(self)
@@ -495,20 +548,7 @@ return {
 				-- self:_calculateGlobalPos()
 				-- self:_calculateBounding()
 				self:_posChanged(ox, self._y)
-				-- self:_changed()
-				
-				local p = self.parent
-				while p do
-					if not p._is_controll_element then break end
-					
-					p = p.parent
-				end
-				
-				if p then
-					p:_changed(true)
-				else
-					self:_changed()
-				end
+				self:_changed()
 			end,
 			
 			get = function(self)
@@ -528,20 +568,7 @@ return {
 				-- self:_calculateGlobalPos()
 				-- self:_calculateBounding()
 				self:_posChanged(self._x, oy)
-				-- self:_changed()
-				
-				local p = self.parent
-				while p do
-					if not p._is_controll_element then break end
-					
-					p = p.parent
-				end
-				
-				if p then
-					p:_changed(true)
-				else
-					self:_changed()
-				end
+				self:_changed()
 			end,
 			
 			get = function(self)

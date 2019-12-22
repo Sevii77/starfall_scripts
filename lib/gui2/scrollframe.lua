@@ -39,6 +39,14 @@ return {
 			self._inner.w = self._w - ((self._scrollbar_y and self._scrollbar_y.enabled) and self._scrollbar_y._w or 0)
 			self._inner.h = self._h - ((self._scrollbar_x and self._scrollbar_x.enabled) and self._scrollbar_x._h or 0)
 			self._inner:_updateDocking()
+			
+			if self._scrollbar_x then
+				self._scrollbar_x:onChange(self._scrollbar_x.value)
+			end
+			
+			if self._scrollbar_y then
+				self._scrollbar_y:onChange(self._scrollbar_y.value)
+			end
 		end
 	},
 	
@@ -60,6 +68,7 @@ return {
 						if not self._content then return end
 						
 						self._content.x = -value + self._content._dock.margin.l
+						self:_changed(true)
 					end
 					
 					if self._scrollbar_y then
@@ -93,6 +102,7 @@ return {
 						if not self._content then return end
 						
 						self._content.y = -value + self._content._dock.margin.t
+						self:_changed(true)
 					end
 					
 					if self._scrollbar_x then

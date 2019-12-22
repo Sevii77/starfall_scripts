@@ -185,9 +185,9 @@ local themes = {
 		primaryColorDark    = Color(160, 160, 160),
 		primaryTextColor    = Color(15, 15, 15),
 		
-		secondaryColor      = Color(50, 110, 210),
-		secondaryColorLight = Color(80, 140, 255),
-		secondaryColorDark  = Color(20, 80, 160),
+		secondaryColor      = Color(50, 110, 150),
+		secondaryColorLight = Color(80, 140, 180),
+		secondaryColorDark  = Color(20, 80, 120),
 		secondaryTextColor  = Color(90, 90, 90),
 		
 		font = render.createFont("Trebuchet", 18, 350, true),
@@ -208,9 +208,9 @@ local themes = {
 		primaryColorDark    = Color(30, 30, 30),
 		primaryTextColor    = Color(255, 255, 255),
 		
-		secondaryColor      = Color(50, 110, 210),
-		secondaryColorLight = Color(80, 140, 255),
-		secondaryColorDark  = Color(20, 80, 160),
+		secondaryColor      = Color(50, 110, 150),
+		secondaryColorLight = Color(80, 140, 180),
+		secondaryColorDark  = Color(20, 80, 120),
 		secondaryTextColor  = Color(160, 160, 160),
 		
 		font = render.createFont("Trebuchet", 18, 350, true),
@@ -285,6 +285,20 @@ end)
 
 ----------------------------------------
 
+-- local render_count = 0
+-- for k, v in pairs(_G.render) do
+-- 	if type(v) == "function" then
+-- 		local o = v
+-- 		_G.render[k] = function(...)
+-- 			render_count = render_count + 1
+			
+-- 			return o(...)
+-- 		end
+-- 	end
+-- end
+
+----------------------------------------
+
 local GUI
 GUI = class {
 	type = "gui",
@@ -322,25 +336,26 @@ GUI = class {
 		_rtid = "",
 		_redraw = {},
 		_redraw_order = {},
-		_redraw_all = false,
-		_allow_draw =false,
+		_redraw_all = true,
+		_allow_draw = false,
 		
-		_max_fps = 40,
+		_cells = {},
+		_cell_size = 64,
+		
+		_max_fps = 60,
 		_last_update = 0,
 		_deltatime = 0,
 		
 		------------------------------
 		
 		_changed = function(self, obj, simple)
+			--self._redraw_all = true
+			
 			if self._redraw_all then return end
 			
-			if simple then
-				if not self._redraw[obj] then
-					self._redraw[obj] = true
-					table.insert(self._redraw_order, obj)
-				end
-			else
-				self._redraw_all = true
+			if not self._redraw[obj] then
+				self._redraw[obj] = true
+				table.insert(self._redraw_order, obj)
 			end
 		end,
 		
@@ -365,7 +380,6 @@ GUI = class {
 				parent = parent,
 				children = {},
 				order = {},
-				-- global_bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
 				bounding = {x = 0, y = 0, x2 = 0, y2 = 0},
 				global_pos = Vector(),
 				cursor = {x = 0, y = 0}
@@ -412,7 +426,7 @@ GUI = class {
 				render.pushMatrix(m, true)
 				render.selectRenderTarget(self._rtid)
 				
-				local function drawobject(object)
+				local function drawobject(object, x1o, y1o, x2o, y2o)
 					local obj = object.object
 					if not obj._enabled or not obj._visible then return end
 					
@@ -424,15 +438,19 @@ GUI = class {
 					local crm = obj._customRenderMask
 					if crm then
 						stencil.pushMask(function()
+							-- render_count = 0
 							crm(obj, obj._w, obj._h)
+							-- print(render_count)
 						end, obj._invert_render_mask)
 					end
 					
 					local b = object.bounding
-					render.enableScissorRect((b.x + pos.x) * sx, (b.y + pos.y) * sy, (b.x2 + pos.x) * sx, (b.y2 + pos.y) * sy)
+					render.enableScissorRect(math.max(x1o or 0, (b.x + pos.x)) * sx, math.max(y1o or 0, (b.y + pos.y)) * sy, math.min(x2o or self._w, (b.x2 + pos.x)) * sx, math.min(y2o or self._h, (b.y2 + pos.y)) * sy)
+					-- render_count = 0
 					obj:_draw(deltatime)
+					-- print(render_count)
 					render.disableScissorRect()
-					
+					-- print("----")
 					if crm then
 						stencil.popMask()
 					end
@@ -441,6 +459,7 @@ GUI = class {
 				end
 				
 				if self._redraw_all then
+					-- render_count = 0
 					local function draw(object)
 						drawobject(object)
 						
@@ -457,34 +476,125 @@ GUI = class {
 					self._redraw = {}
 					self._redraw_order = {}
 					self._redraw_all = false
+					-- print(render_count)
 				elseif table.count(self._redraw) > 0 then
-					-- TODO: Improve :D
-					
-					-- First add all children of elements that are being redrawn
-					local done = {}
-					local redraw = {}
-					local function add(objs)
+					local x, y, x2, y2
+					local function draw(objs)
+						table.sort(objs, function(a, b) return a.order > b.order end)
+						
 						for _, obj in pairs(objs) do
-							if not done[obj] then
-								done[obj] = true
-								
-								local object = self._object_refs[obj]
-								table.insert(redraw, object)
-								add(object.order)
-							end
+							drawobject(self._object_refs[obj.obj], x, y, x2, y2)
+							
+							draw(obj.children)
 						end
 					end
 					
-					add(self._redraw_order)
-					
-					-- Draw
-					for _, object in pairs(redraw) do
-						drawobject(object)
+					for _, obj in pairs(self._redraw_order) do
+						if obj._visible and obj._enabled then
+							local object = self._object_refs[obj]
+							local cs = self._cell_size
+							
+							-- Clear old space
+							local p = object.global_pos_last
+							local b = object.bounding_last
+							render.enableScissorRect((b.x + p.x) * sx, (b.y + p.y) * sy, (b.x2 + p.x) * sx, (b.y2 + p.y) * sy)
+							render.clear(clearcolor)
+							render.disableScissorRect()
+							
+							-- Redraw elements where we cleared
+							-- x, y, x2, y2 = math.floor((b.x + p.x) / cs) * cs, math.floor((b.y + p.y) / cs) * cs, math.ceil((b.x2 + p.x) / cs) * cs, math.ceil((b.y2 + p.y) / cs) * cs
+							
+							local pl = object.global_pos
+							local bl = object.bounding
+							local gx = math.floor(math.min(bl.x + pl.x, b.x + p.x) / cs)
+							local gy = math.floor(math.min(bl.y + pl.y, b.y + p.y) / cs)
+							local gx2 = math.ceil(math.max(bl.x2 + pl.x, b.x2 + p.x) / cs)
+							local gy2 = math.ceil(math.max(bl.y2 + pl.y, b.y2 + p.y) / cs)
+							x, y, x2, y2 = gx * cs, gy * cs, gx2 * cs, gy2 * cs
+							
+							local gx2 = math.floor(math.max(bl.x2 + pl.x, b.x2 + p.x) / cs)
+							local gy2 = math.floor(math.max(bl.y2 + pl.y, b.y2 + p.y) / cs)
+							local todo, done = {}, {}
+							for x = gx, gx2 do
+								for y = gy, gy2 do
+									if self._cells[x] and self._cells[x][y] then -- Idk why needed but w/e, happy it finally works
+										for _, o in pairs(self._cells[x][y]) do
+											if not done[o] then
+												table.insert(todo, o)
+												done[o] = o
+											end
+										end
+									end
+								end
+							end
+							-- for _, cell in pairs(obj._cells) do
+							-- 	for _, o in pairs(self._cells[cell.x][cell.y]) do
+							-- 		if not done[o] then
+							-- 			table.insert(todo, o)
+							-- 			done[o] = o
+							-- 		end
+							-- 	end
+							-- end
+							
+							-- Sort in parent hierarchy
+							local objs, refs = {}, {}
+							while #todo > 0 do
+								local o = todo[1]
+								local p = o.parent
+								
+								if p then
+									table.insert(refs[p].children, {
+										obj = o,
+										order = table.keyFromValue(self._object_refs[p].order, o),
+										children = {}
+									})
+									refs[o] = refs[p].children[#refs[p].children]
+								else
+									table.insert(objs, {
+										obj = o,
+										order = table.keyFromValue(self._render_order, o),
+										children = {}
+									})
+									refs[o] = objs[#objs]
+								end
+								
+								table.remove(todo, 1)
+							end
+							
+							draw(objs)
+						end
 					end
 					
 					self._redraw = {}
 					self._redraw_order = {}
 				end
+				-- elseif table.count(self._redraw) > 0 then
+				-- 	-- Disabled for now cuz fuck that shit
+				-- 	-- First add all children of elements that are being redrawn
+				-- 	local done = {}
+				-- 	local redraw = {}
+				-- 	local function add(objs)
+				-- 		for _, obj in pairs(objs) do
+				-- 			if not done[obj] or self._redraw[obj] then
+				-- 				done[obj] = true
+								
+				-- 				local object = self._object_refs[obj]
+				-- 				table.insert(redraw, object)
+				-- 				add(object.order)
+				-- 			end
+				-- 		end
+				-- 	end
+					
+				-- 	add(self._redraw_order)
+					
+				-- 	-- Draw
+				-- 	for _, object in pairs(redraw) do
+				-- 		drawobject(object)
+				-- 	end
+					
+				-- 	self._redraw = {}
+				-- 	self._redraw_order = {}
+				-- end
 				
 				render.selectRenderTarget()
 				render.popMatrix()
@@ -566,21 +676,9 @@ GUI = class {
 		end,
 		
 		renderDebug = function(self)
-			-- render.setRGBA(255, 0, 255, 50)
-			-- for obj, object in pairs(self._object_refs) do
-			-- 	if obj._enabled and obj._visible then
-			-- 		local ox, oy = object.global_pos.x, object.global_pos.y
-			-- 		local b = object.bounding
-			-- 		local x, y, x2, y2 = b.x + ox, b.y + oy, b.x2 + ox, b.y2 + oy
-					
-			-- 		render.drawLine(x, y, x2, y)
-			-- 		render.drawLine(x, y, x, y2)
-			-- 		render.drawLine(x, y2, x2, y2)
-			-- 		render.drawLine(x2, y, x2, y2)
-			-- 		render.drawLine(x, y, x2, y2)
-			-- 	end
-			-- end
+			-- Bounding boxes & masks
 			render.setRGBA(255, 0, 255, 50)
+			render.setMaterial()
 			
 			local function draw(objects)
 				for obj, object in pairs(objects) do
@@ -595,15 +693,46 @@ GUI = class {
 						render.drawLine(x2, y, x2, y2)
 						render.drawLine(x, y, x2, y2)
 						
+						local crm = obj._customRenderMask
+						if crm then
+							local p = object.global_pos
+							local m = Matrix()
+							m:setTranslation(Vector(p.x, p.y))
+							render.pushMatrix(m)
+							crm(obj, obj._w, obj._h)
+							render.popMatrix()
+						end
+						
 						draw(object.children)
 					end
 				end
 			end
 			
 			draw(self._objects)
+			
+			-- Cells
+			local cs = self._cell_size
+			for x, column in pairs(self._cells) do
+				for y, cell in pairs(column) do
+					local c = (x + y) % 2 == 1 and 200 or 150
+					render.setRGBA(c, c, c, 50)
+					render.drawRect(x * cs, y * cs, cs, cs)
+					
+					render.setRGBA(255, 0, 255, 150)
+					render.drawSimpleText(x * cs + cs / 2, y * cs + cs / 2, tostring(#cell), 1, 1)
+				end
+			end
+			
+			-- Cells focus
+			if self._focus_object then
+				for _, cell in pairs(self._focus_object.object._cells) do
+					render.setRGBA(255, 0, 0, 50)
+					render.drawRect(cell.x * cs, cell.y * cs, cs, cs)
+				end
+			end
 		end,
 		
-		renderMasks = function(self)
+		--[[renderMasks = function(self)
 			render.setRGBA(255, 0, 255, 50)
 			render.setMaterial()
 			
@@ -620,7 +749,7 @@ GUI = class {
 					end
 				end
 			end
-		end,
+		end,]]
 		
 		renderCursor = function(self, s)
 			local cx, cy = self:getCursorPos()
@@ -735,6 +864,29 @@ GUI = class {
 				cx, cy = self._w / w * cx, self._h / h * cy
 			end
 			
+			-- local function think(object)
+			-- 	local obj = object.object
+				
+			-- 	if obj._enabled and obj._visible then
+			-- 		local gp = object.global_pos
+			-- 		local lcx, lcy = cx and (cx - gp.x) or nil, cy and (cy - gp.y) or nil
+					
+			-- 		object.cursor = {x = lcx, y = lcy}
+					
+			-- 		obj:_think(deltatime, lcx, lcy)
+					
+			-- 		for i, child in pairs(object.order) do
+			-- 			think(object.children[child])
+			-- 		end
+			-- 	end
+				
+			-- 	obj:_postthink()
+			-- end
+			
+			-- for i, obj in pairs(self._render_order) do
+			-- 	think(self._objects[obj])
+			-- end
+			
 			local function think(objects)
 				for obj, object in pairs(objects) do
 					if obj._enabled and obj._visible then
@@ -747,32 +899,19 @@ GUI = class {
 						
 						think(object.children)
 					end
-					
-					obj:_postthink()
 				end
 			end
-			
 			think(self._objects)
 			
-			-- local function think(objects, px, py, px2, py2, px3, py3)
-			-- 	for obj, data in pairs(objects) do
-			-- 		if obj._enabled and obj._visible then
-			-- 			local b = data.global_bounding
-			-- 			local lx, ly = cx and cx - (b.gx or 0) or nil, cy and cy - (b.gy or 0) or nil
-			-- 			obj:_think(deltatime, lx, ly)
-			-- 			data.cursor = {x = lx, y = ly}
-						
-			-- 			local x3, y3 = obj._pos.x + px3, obj._pos.y + py3
-			-- 			local x, y = math.clamp(px, x3, px2), math.clamp(py, y3, py2)
-			-- 			local x2, y2 = math.clamp(x3 + obj._w, x, px2), math.clamp(y3 + obj._h, y, py2)
-			-- 			data.global_bounding = {x = x, y = y, x2 = x2, y2 = y2, gx = x3, gy = y3}
-						
-			-- 			think(data.children, x, y, x2, y2, x3, y3)
-			-- 		end
-			-- 	end
-			-- end
 			
-			-- think(self._objects, 0, 0, self._w, self._h, 0, 0)
+			local function postthink(objects)
+				for obj, object in pairs(objects) do
+					obj:_postthink()
+					
+					postthink(object.children)
+				end
+			end
+			postthink(self._objects)
 			
 			-- Mouse stuff
 			local last = self._focus_object
@@ -802,30 +941,6 @@ GUI = class {
 						
 						return hover
 					end
-					
-					-- if not obj._enabled or not obj._visible then return end
-					
-					-- local b = object.global_bounding
-					-- if cx > b.x and cy > b.y and cx < b.x2 and cy < b.y2 then
-					-- 	local cim = obj._customInputMask
-					-- 	if cim and not cim(obj, object.cursor.x, object.cursor.y) then return end
-						
-					-- 	local hover
-					-- 	if not obj._translucent then
-					-- 		hover = object
-					-- 	end
-						
-					-- 	for i, child in pairs(object.order) do
-					-- 		local h = dobj(object.children[child])
-					-- 		if h then
-					-- 			hover = h
-								
-					-- 			break
-					-- 		end
-					-- 	end
-						
-					-- 	return hover
-					-- end
 				end
 				
 				for i, obj in pairs(self._render_order) do
@@ -1084,13 +1199,13 @@ GUI = class {
 				
 				-- Main inherit stuff
 				for k, v in pairs(i.data) do
-					if not data.data[k] then
+					if data.data[k] == nil then
 						data.data[k] = type(v) == "table" and table.copy(v) or v
 					end
 				end
 				
 				for k, v in pairs(i.properties) do
-					if not data.properties[k] then
+					if data.properties[k] == nil then
 						data.properties[k] = type(v) == "table" and table.copy(v) or v
 					end
 					
@@ -1117,11 +1232,11 @@ GUI = class {
 								return func_i(self, unpack(vals))
 							end
 							
-							local a, b, c, d, e, f, g, h = func(self, ...)
+							local a = {func(self, ...)}
 							
 							_G.base = old_base
 							
-							return a, b, c, d, e, f, g, h
+							return unpack(a)
 						end
 					end
 				end

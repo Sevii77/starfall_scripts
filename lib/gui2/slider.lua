@@ -23,7 +23,7 @@ return {
 		_active_color = false,
 		_hover_color = false,
 		
-		_draw_background = false,
+		_draw_background = true,
 		_animation_speed = false,
 		_min = 0,
 		_max = 1,
@@ -263,6 +263,15 @@ return {
 	----------------------------------------
 	
 	properties = {
+		_is_visibly_translucent = {
+			-- Not that you should ever parent anything to a checkbox, but just incase it has been done for some reason
+			get = function(self)
+				return not self._draw_background
+			end
+		},
+		
+		------------------------------
+		
 		mainColor = {
 			set = function(self, color)
 				self._main_color = color
@@ -321,7 +330,7 @@ return {
 			set = function(self, state)
 				self._draw_background = state
 				
-				self:_changed(true)
+				self:_changed(state)
 			end,
 			
 			get = function(self)
