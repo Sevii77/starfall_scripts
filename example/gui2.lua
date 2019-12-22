@@ -3,7 +3,6 @@
 
 local text_block = "Satisfied conveying an dependent contented he gentleman agreeable do be. Warrant private blushes removed an in equally totally if. Delivered dejection necessary objection do mr prevailed. Mr feeling do chiefly cordial in do. Water timed folly right aware if oh truth. Imprudence attachment him his for sympathize. Large above be to means. Dashwood do provided stronger is. But discretion frequently sir the she instrument unaffected admiration everything."
 local debug_rendering = false
-local mask_rendering = false
 local direct_rendering = false
 
 ------------------------------
@@ -15,7 +14,6 @@ local gui = GUI(512, 512)
 --local w, h = render.getGameResolution()
 --local gui = GUI(w, h)
 
-local fancy
 do -- Basic example
 	local body = gui:create("frame")
 	body.pos = Vector(4, 56)
@@ -23,7 +21,6 @@ do -- Basic example
 	body.title = "Fancy Example"
 	body.collapseOnClose = true
 	body.minSize = Vector(150, 250)
-	fancy = body
 	
 	do
 		local page = gui:create("base", body.inner)
@@ -169,16 +166,6 @@ do -- Basic example
 					debug_rendering = state
 				end
 				
-				local masks = gui:create("checkbox")
-				masks.style = 2
-				masks.text = "Masks Rendering"
-				masks.state = mask_rendering
-				masks.cornerStyle = 0
-				grid:addItem(masks)
-				masks.onChange = function(self, state)
-					mask_rendering = state
-				end
-				
 				local direct = gui:create("checkbox")
 				direct.style = 2
 				direct.text = "Direct Rendering"
@@ -192,11 +179,11 @@ do -- Basic example
 				local bg = gui:create("button")
 				bg.text = "Enable Background"
 				bg.toggle = true
+				bg.state = true -- True because default of checkbox is true
 				bg:setCornerStyle(0, 1, 0, 0)
 				grid:addItem(bg)
 				bg.onClick = function(self)
 					debug.drawBackground = self.state
-					masks.drawBackground = self.state
 					direct.drawBackground = self.state
 					
 					if self.state then
@@ -214,7 +201,6 @@ do -- Basic example
 				grid:addItem(style)
 				style.onClick = function(self)
 					debug.style = 1
-					masks.style = 1
 					direct.style = 1
 					
 					if not bg.state then
@@ -228,7 +214,6 @@ do -- Basic example
 				grid:addItem(style2)
 				style2.onClick = function(self)
 					debug.style = 2
-					masks.style = 2
 					direct.style = 2
 					
 					if not bg.state then
@@ -263,6 +248,7 @@ do -- Basic example
 				
 				local bg = gui:create("button")
 				bg.text = "Enable Background"
+				bg.state = true -- True because default of slider is true
 				bg.toggle = true
 				bg:setCornerStyle(0, 0, 0, 0)
 				grid:addItem(bg)
@@ -322,7 +308,6 @@ do -- Different direction elements
 		local content = gui:create("container")
 		content.size = Vector(400, 400)
 		content.dock = GUI.DOCK.FILL
-		content:setDockMargin(5, 5, 5, 5)
 		scrollframe.content = content
 		
 		for i = 1, 10 do
@@ -397,10 +382,10 @@ end
 ------------------------------
 
 hook.add("render", "", function()
-	render.setBackgroundColor(Color(0, 0, 0, 0))
+	--render.setBackgroundColor(Color(0, 0, 0, 0))
 	
 	gui:think()
-	gui:render()
+	
 	if direct_rendering then
 		gui:renderDirect()
 	else
@@ -418,14 +403,9 @@ hook.add("render", "", function()
 	
 	render.setRGBA(255, 255, 255, 255)
 	render.drawSimpleText(0, 0, tostring(math.round(quotaAverage() * 1000000)))
+	render.drawSimpleText(0, 20, tostring(math.round(ramAverage() / 1024)) .. " KiB")
 	
-	local object = gui._object_refs[fancy]
-	render.drawText(512, 0, 
-		tostring(object.cursor.x) .. ", " .. tostring(object.cursor.y) .. "\n" ..
-		tostring(object.bounding.x) .. ", " .. tostring(object.bounding.y) .. "\n" ..
-		tostring(object.bounding.x2) .. ", " .. tostring(object.bounding.y2) .. "\n" ..
-		tostring(object.global_pos.x) .. ", " .. tostring(object.global_pos.y) .. "\n"
-	, 2)
+	render.drawSimpleText(512, 0, tostring(gui._focus_object and gui._focus_object.object), 2)
 end)
 
 --[[hook.add("drawHUD", "", function()
