@@ -326,7 +326,7 @@ return {
 		value = {
 			set = function(self, value)
 				self._value = value
-				self._progress = (self._value - self._min) / (self._max - self._min)
+				self._progress = value / math.max(0.0001, self._content_size - (self._horizontal and self._w or self._h))
 				
 				self:_changed(true)
 			end,

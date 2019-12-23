@@ -387,6 +387,7 @@ do
 			end
 			
 			element_pages[elem].enabled = true
+			page_frame.scrollbarY.value = 0
 			page_frame.content = element_pages[elem]
 			gui:forceRedraw()
 		end
