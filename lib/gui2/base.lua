@@ -199,7 +199,7 @@ return {
 			return self._animations[name] or 0
 		end,
 		
-		_animationUpdate = function(self, name, state, amount, simple_change)
+		_animationUpdate = function(self, name, state, amount)
 			local anim = self._animations[name] or 0
 			local changed = false
 			
@@ -208,13 +208,15 @@ return {
 					anim = math.min(1, anim + amount)
 					changed = true
 					
-					self:_changed(simple_change)
+					self:onAnimationChange(name, anim)
+					self:_changed()
 				end
 			elseif anim > 0 then
 				anim = math.max(0, anim - amount)
 				changed = true
 				
-				self:_changed(simple_change)
+				self:onAnimationChange(name, anim)
+				self:_changed()
 			end
 			
 			self._animations[name] = anim
@@ -238,11 +240,14 @@ return {
 			local parent = self.parent
 			if parent then
 				parent:_updateDocking()
+				-- self._update_docking = true
 			else
 				self:_updateDocking()
+				-- self._update_docking = true
 			end
 		end,
 		
+		-- _update_docking = false,
 		_updateDocking = function(self)
 			-- Children resize and stuff
 			local dock = self._dock
@@ -267,21 +272,21 @@ return {
 					elseif dt == 2 then
 						-- LEFT
 						x, y, w, h = sx + l, sy + t, math.min(sw - l - r, ow), sh - t - b
-						sx, sw = sx + w, sw - w
+						sx, sw = sx + w + l + r, sw - w - l - r
 					elseif dt == 3 then
 						-- RIGHT
 						y, w, h = sy + t, math.min(sw - l - r, ow), sh - t - b
 						x = sx + sw - w
-						sw = sw - w
+						sw = sw - w - l - r
 					elseif dt == 4 then
 						-- TOP
 						x, y, w, h = sx + l, sy + t, sw - l - r, math.min(sh - t - b, oh)
-						sy, sh = sy + h, sh - h
+						sy, sh = sy + h + t + b, sh - h - t - b
 					elseif dt == 5 then
 						-- BOTTOM
 						x, w, h = sx + l, sw - l - r, math.min(sh - t - b, oh)
 						y = sy + sh - h
-						sh = sh - h
+						sh = sh - h - t - b
 					end
 					
 					-- Margin
@@ -378,6 +383,11 @@ return {
 				self:_calculateCells()
 			end
 			
+			-- if self._update_docking then
+			-- 	self._update_docking = false
+			-- 	self:_updateDocking()
+			-- end
+			
 			self._first = false
 		end,
 		
@@ -421,6 +431,7 @@ return {
 		
 		onDraw = function(self, w, h) end,
 		onDrawOver = function(self, size) end,
+		onAnimationChange = function(self, anim, value) end
 	},
 	
 	----------------------------------------
@@ -580,7 +591,6 @@ return {
 		
 		size = {
 			set = function(self, w, h)
-				
 				local ow, oh = self._w, self._h
 				
 				if h then
@@ -709,6 +719,7 @@ return {
 				end
 				
 				self:_updateDocking()
+				-- self._update_docking = true
 			end,
 			
 			get = function(self)

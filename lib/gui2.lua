@@ -180,14 +180,14 @@ local cursor = { --[[32x32]]
 
 local themes = {
 	light = {
-		primaryColor        = Color(190, 190, 190),
-		primaryColorLight   = Color(240, 240, 240),
-		primaryColorDark    = Color(160, 160, 160),
+		primaryColor        = Color(180, 180, 180),
+		primaryColorLight   = Color(200, 200, 200),
+		primaryColorDark   = Color(160, 160, 160),
 		primaryTextColor    = Color(15, 15, 15),
 		
-		secondaryColor      = Color(50, 110, 150),
-		secondaryColorLight = Color(80, 140, 180),
-		secondaryColorDark  = Color(20, 80, 120),
+		secondaryColor      = Color(50, 80, 150),
+		secondaryColorLight = Color(80, 100, 180),
+		secondaryColorDark  = Color(20, 60, 110),
 		secondaryTextColor  = Color(90, 90, 90),
 		
 		font = render.createFont("Trebuchet", 18, 350, true),
@@ -199,7 +199,9 @@ local themes = {
 		cursorMainColor       = Color(220, 220, 220),
 		cursorOutlineColor    = Color(30, 30, 30),
 		cursorSize            = 12,
-		cursorRender          = cursor
+		cursorRender          = cursor,
+		
+		overrides = {}
 	},
 	
 	dark = {
@@ -208,9 +210,9 @@ local themes = {
 		primaryColorDark    = Color(30, 30, 30),
 		primaryTextColor    = Color(255, 255, 255),
 		
-		secondaryColor      = Color(50, 110, 150),
-		secondaryColorLight = Color(80, 140, 180),
-		secondaryColorDark  = Color(20, 80, 120),
+		secondaryColor      = Color(50, 80, 150),
+		secondaryColorLight = Color(80, 100, 180),
+		secondaryColorDark  = Color(20, 60, 110),
 		secondaryTextColor  = Color(160, 160, 160),
 		
 		font = render.createFont("Trebuchet", 18, 350, true),
@@ -222,7 +224,9 @@ local themes = {
 		cursorMainColor       = Color(30, 30, 30),
 		cursorOutlineColor    = Color(220, 220, 220),
 		cursorSize            = 12,
-		cursorRender          = cursor
+		cursorRender          = cursor,
+		
+		overrides = {}
 	}
 }
 
@@ -348,7 +352,7 @@ GUI = class {
 		
 		------------------------------
 		
-		_changed = function(self, obj, simple)
+		_changed = function(self, obj, simple --[[gone for now, might add back later, probably not]])
 			--self._redraw_all = true
 			
 			if self._redraw_all then return end
@@ -389,6 +393,17 @@ GUI = class {
 			obj._gui = self
 			obj._theme = self.theme
 			
+			-- Overrides
+			
+			local overrides = self._theme.overrides[name]
+			if overrides then
+				for k, v in pairs(overrides) do
+					rawset(obj, k, v)
+				end
+			end
+			
+			--
+			
 			object.object = obj
 			
 			self._object_refs[obj] = object
@@ -428,7 +443,7 @@ GUI = class {
 				
 				local function drawobject(object, x1o, y1o, x2o, y2o)
 					local obj = object.object
-					if not obj._enabled or not obj._visible then return end
+					-- if not obj._enabled or not obj._visible then return end
 					
 					local pos = object.global_pos
 					local m = Matrix()
@@ -461,6 +476,9 @@ GUI = class {
 				if self._redraw_all then
 					-- render_count = 0
 					local function draw(object)
+						local obj = object.object
+						if not obj._enabled or not obj._visible then return end
+						
 						drawobject(object)
 						
 						for i = #object.order, 1, -1 do
@@ -543,12 +561,14 @@ GUI = class {
 								local p = o.parent
 								
 								if p then
-									table.insert(refs[p].children, {
-										obj = o,
-										order = table.keyFromValue(self._object_refs[p].order, o),
-										children = {}
-									})
-									refs[o] = refs[p].children[#refs[p].children]
+									if refs[p] then
+										table.insert(refs[p].children, {
+											obj = o,
+											order = table.keyFromValue(self._object_refs[p].order, o),
+											children = {}
+										})
+										refs[o] = refs[p].children[#refs[p].children]
+									end
 								else
 									table.insert(objs, {
 										obj = o,
@@ -675,7 +695,7 @@ GUI = class {
 			end
 		end,
 		
-		renderDebug = function(self)
+		renderDebug = function(self, simple)
 			-- Bounding boxes & masks
 			render.setRGBA(255, 0, 255, 50)
 			render.setMaterial()
@@ -710,24 +730,26 @@ GUI = class {
 			
 			draw(self._objects)
 			
-			-- Cells
-			local cs = self._cell_size
-			for x, column in pairs(self._cells) do
-				for y, cell in pairs(column) do
-					local c = (x + y) % 2 == 1 and 200 or 150
-					render.setRGBA(c, c, c, 50)
-					render.drawRect(x * cs, y * cs, cs, cs)
-					
-					render.setRGBA(255, 0, 255, 150)
-					render.drawSimpleText(x * cs + cs / 2, y * cs + cs / 2, tostring(#cell), 1, 1)
+			if not simple then
+				-- Cells
+				local cs = self._cell_size
+				for x, column in pairs(self._cells) do
+					for y, cell in pairs(column) do
+						local c = (x + y) % 2 == 1 and 200 or 150
+						render.setRGBA(c, c, c, 50)
+						render.drawRect(x * cs, y * cs, cs, cs)
+						
+						render.setRGBA(255, 0, 255, 150)
+						render.drawSimpleText(x * cs + cs / 2, y * cs + cs / 2, tostring(#cell), 1, 1)
+					end
 				end
-			end
-			
-			-- Cells focus
-			if self._focus_object then
-				for _, cell in pairs(self._focus_object.object._cells) do
-					render.setRGBA(255, 0, 0, 50)
-					render.drawRect(cell.x * cs, cell.y * cs, cs, cs)
+				
+				-- Cells focus
+				if self._focus_object then
+					for _, cell in pairs(self._focus_object.object._cells) do
+						render.setRGBA(255, 0, 0, 50)
+						render.drawRect(cell.x * cs, cell.y * cs, cs, cs)
+					end
 				end
 			end
 		end,
@@ -1049,11 +1071,11 @@ GUI = class {
 		end,
 		
 		setFpsLimit = function(self, value)
-			self.max_fps = value
+			self._max_fps = value
 		end,
 		
 		getFpsLimit = function(self)
-			return self.max_fps
+			return self._max_fps
 		end
 	},
 	
@@ -1258,7 +1280,8 @@ GUI = class {
 				raw = data,
 				class = class(data),
 				constructor = constructor,
-				inherit = GUI.elements[inherit]
+				inherit = GUI.elements[inherit],
+				inherit_name = inherit
 			}
 		end
 	},

@@ -143,6 +143,8 @@ return {
 				
 				rawset(self, key, value)
 			end
+		else
+			class._index = class
 		end
 		
 		classes[class_type] = data

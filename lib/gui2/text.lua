@@ -11,9 +11,9 @@ return {
 	data = {
 		_text = "",
 		_font = false,
-		_text_color = false,
-		_text_alignment_x = 1,
-		_text_alignment_y = 1,
+		_color = false,
+		_alignment_x = 1,
+		_alignment_y = 1,
 		
 		_spos = true,
 		_sx = 0,
@@ -24,7 +24,7 @@ return {
 		_updateBounds = function(self)
 			render.setFont(self.font)
 			local w, h = render.getTextSize(self._text)
-			local ax, ay = self._text_alignment_x, self._text_alignment_y
+			local ax, ay = self._alignment_x, self._alignment_y
 			
 			local x = self._sx - (ax == 0 and 0 or (ax == 1 and w / 2 or w))
 			local y = self._sy - (ay == 3 and 0 or (ay == 1 and h / 2 or h))
@@ -43,10 +43,10 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h)
-			local ax = self._text_alignment_x
+			local ax = self._alignment_x
 			
 			render.setFont(self.font)
-			render.setColor(self.textColor)
+			render.setColor(self.color)
 			render.drawText((ax == 0 and 0 or (ax == 1 and w / 2 or w)), 0, self.text, ax)
 		end
 	},
@@ -167,56 +167,56 @@ return {
 			end
 		},
 		
-		textColor = {
+		color = {
 			set = function(self, color)
-				self._text_color = color
+				self._color = color
 				
 				self:_changed()
 			end,
 			
 			get = function(self)
-				local clr = self._text_color
+				local clr = self._color
 				return clr and (type(clr) == "string" and self._theme[clr] or clr) or self._theme.primaryTextColor
 			end
 		},
 		
-		textAlignmentX = {
+		alignmentX = {
 			set = function(self, x)
-				self._text_alignment_x = x
+				self._alignment_x = x
 				
 				self:_changed()
 				self:_updateBounds()
 			end,
 			
 			get = function(self)
-				return self._text_alignment_x
+				return self._alignment_x
 			end
 		},
 		
-		textAlignmentY = {
+		alignmentY = {
 			set = function(self, y)
-				self._text_alignment_y = y
+				self._alignment_y = y
 				
 				self:_changed()
 				self:_updateBounds()
 			end,
 			
 			get = function(self)
-				return self._text_alignment_y
+				return self._alignment_y
 			end
 		},
 		
-		textAlignment = {
+		alignment = {
 			set = function(self, x, y)
-				self._text_alignment_x = x
-				self._text_alignment_y = y
+				self._alignment_x = x
+				self._alignment_y = y
 				
 				self:_changed()
 				self:_updateBounds()
 			end,
 			
 			get = function(self)
-				return self._text_alignment_x, self._text_alignment_y
+				return self._alignment_x, self._alignment_y
 			end
 		}
 	}

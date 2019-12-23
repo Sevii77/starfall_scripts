@@ -83,7 +83,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._scrollbar_y
+				return self._scrollbar_x
 			end
 		},
 		
@@ -123,6 +123,10 @@ return {
 		
 		content = {
 			set = function(self, object)
+				if self._content then
+					self._content.parent = nil
+				end
+				
 				object.parent = self._inner
 				
 				if self._scrollbar_y then

@@ -35,7 +35,7 @@ do -- Basic example
 		
 		local text = gui:create("text", page)
 		text.text = s
-		text:setTextAlignment(0, 3)
+		text:setAlignment(0, 3)
 	end
 	
 	do
@@ -180,7 +180,7 @@ do -- Basic example
 				bg.text = "Enable Background"
 				bg.toggle = true
 				bg.state = true -- True because default of checkbox is true
-				bg:setCornerStyle(0, 1, 0, 0)
+				bg.cornerStyle = 0
 				grid:addItem(bg)
 				bg.onClick = function(self)
 					debug.drawBackground = self.state
@@ -290,11 +290,11 @@ do -- Basic example
 	end
 end
 
-do -- Different direction elements
+do -- Bidirection scrolling + other stuff
 	local body = gui:create("frame")
 	body.pos = Vector(4, 310)
 	body.size = Vector(250, 146)
-	body.title = "Vertical / Horizontal"
+	body.title = "2D Scrollframe"
 	body.collapseOnClose = true
 	body.minSize = Vector(150, 100)
 	
@@ -302,12 +302,15 @@ do -- Different direction elements
 	scrollframe.dock = GUI.DOCK.FILL
 	scrollframe:setDockMargin(5, 5, 5, 5)
 	scrollframe.scrollbarX = true
+	scrollframe.scrollbarX:setCornerStyle(0, 0, 1, 1)
 	scrollframe.scrollbarY = true
+	scrollframe.scrollbarY:setCornerStyle(0, 1, 1, 0)
 	
 	do
 		local content = gui:create("container")
 		content.size = Vector(400, 400)
 		content.dock = GUI.DOCK.FILL
+		content.cornerStyle = 0
 		scrollframe.content = content
 		
 		for i = 1, 10 do
