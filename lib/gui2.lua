@@ -501,88 +501,88 @@ GUI = class {
 						table.sort(objs, function(a, b) return a.order > b.order end)
 						
 						for _, obj in pairs(objs) do
-							drawobject(self._object_refs[obj.obj], x, y, x2, y2)
-							
-							draw(obj.children)
+							if obj.obj._visible and obj.obj._enabled then
+								drawobject(self._object_refs[obj.obj], x, y, x2, y2)
+								
+								draw(obj.children)
+							end
 						end
 					end
 					
 					for _, obj in pairs(self._redraw_order) do
-						if obj._visible and obj._enabled then
-							local object = self._object_refs[obj]
-							local cs = self._cell_size
-							
-							-- Clear old space
-							local p = object.global_pos_last
-							local b = object.bounding_last
-							render.enableScissorRect((b.x + p.x) * sx, (b.y + p.y) * sy, (b.x2 + p.x) * sx, (b.y2 + p.y) * sy)
-							render.clear(clearcolor)
-							render.disableScissorRect()
-							
-							-- Redraw elements where we cleared
-							-- x, y, x2, y2 = math.floor((b.x + p.x) / cs) * cs, math.floor((b.y + p.y) / cs) * cs, math.ceil((b.x2 + p.x) / cs) * cs, math.ceil((b.y2 + p.y) / cs) * cs
-							
-							local pl = object.global_pos
-							local bl = object.bounding
-							local gx = math.floor(math.min(bl.x + pl.x, b.x + p.x) / cs)
-							local gy = math.floor(math.min(bl.y + pl.y, b.y + p.y) / cs)
-							local gx2 = math.ceil(math.max(bl.x2 + pl.x, b.x2 + p.x) / cs)
-							local gy2 = math.ceil(math.max(bl.y2 + pl.y, b.y2 + p.y) / cs)
-							x, y, x2, y2 = gx * cs, gy * cs, gx2 * cs, gy2 * cs
-							
-							local gx2 = math.floor(math.max(bl.x2 + pl.x, b.x2 + p.x) / cs)
-							local gy2 = math.floor(math.max(bl.y2 + pl.y, b.y2 + p.y) / cs)
-							local todo, done = {}, {}
-							for x = gx, gx2 do
-								for y = gy, gy2 do
-									if self._cells[x] and self._cells[x][y] then -- Idk why needed but w/e, happy it finally works
-										for _, o in pairs(self._cells[x][y]) do
-											if not done[o] then
-												table.insert(todo, o)
-												done[o] = o
-											end
+						local object = self._object_refs[obj]
+						local cs = self._cell_size
+						
+						-- Clear old space
+						local p = object.global_pos_last
+						local b = object.bounding_last
+						render.enableScissorRect((b.x + p.x) * sx, (b.y + p.y) * sy, (b.x2 + p.x) * sx, (b.y2 + p.y) * sy)
+						render.clear(clearcolor)
+						render.disableScissorRect()
+						
+						-- Redraw elements where we cleared
+						-- x, y, x2, y2 = math.floor((b.x + p.x) / cs) * cs, math.floor((b.y + p.y) / cs) * cs, math.ceil((b.x2 + p.x) / cs) * cs, math.ceil((b.y2 + p.y) / cs) * cs
+						
+						local pl = object.global_pos
+						local bl = object.bounding
+						local gx = math.floor(math.min(bl.x + pl.x, b.x + p.x) / cs)
+						local gy = math.floor(math.min(bl.y + pl.y, b.y + p.y) / cs)
+						local gx2 = math.ceil(math.max(bl.x2 + pl.x, b.x2 + p.x) / cs)
+						local gy2 = math.ceil(math.max(bl.y2 + pl.y, b.y2 + p.y) / cs)
+						x, y, x2, y2 = gx * cs, gy * cs, gx2 * cs, gy2 * cs
+						
+						local gx2 = math.floor(math.max(bl.x2 + pl.x, b.x2 + p.x) / cs)
+						local gy2 = math.floor(math.max(bl.y2 + pl.y, b.y2 + p.y) / cs)
+						local todo, done = {}, {}
+						for x = gx, gx2 do
+							for y = gy, gy2 do
+								if self._cells[x] and self._cells[x][y] then -- Idk why needed but w/e, happy it finally works
+									for _, o in pairs(self._cells[x][y]) do
+										if not done[o] then
+											table.insert(todo, o)
+											done[o] = o
 										end
 									end
 								end
 							end
-							-- for _, cell in pairs(obj._cells) do
-							-- 	for _, o in pairs(self._cells[cell.x][cell.y]) do
-							-- 		if not done[o] then
-							-- 			table.insert(todo, o)
-							-- 			done[o] = o
-							-- 		end
-							-- 	end
-							-- end
+						end
+						-- for _, cell in pairs(obj._cells) do
+						-- 	for _, o in pairs(self._cells[cell.x][cell.y]) do
+						-- 		if not done[o] then
+						-- 			table.insert(todo, o)
+						-- 			done[o] = o
+						-- 		end
+						-- 	end
+						-- end
+						
+						-- Sort in parent hierarchy
+						local objs, refs = {}, {}
+						while #todo > 0 do
+							local o = todo[1]
+							local p = o.parent
 							
-							-- Sort in parent hierarchy
-							local objs, refs = {}, {}
-							while #todo > 0 do
-								local o = todo[1]
-								local p = o.parent
-								
-								if p then
-									if refs[p] then
-										table.insert(refs[p].children, {
-											obj = o,
-											order = table.keyFromValue(self._object_refs[p].order, o),
-											children = {}
-										})
-										refs[o] = refs[p].children[#refs[p].children]
-									end
-								else
-									table.insert(objs, {
+							if p then
+								if refs[p] then
+									table.insert(refs[p].children, {
 										obj = o,
-										order = table.keyFromValue(self._render_order, o),
+										order = table.keyFromValue(self._object_refs[p].order, o),
 										children = {}
 									})
-									refs[o] = objs[#objs]
+									refs[o] = refs[p].children[#refs[p].children]
 								end
-								
-								table.remove(todo, 1)
+							else
+								table.insert(objs, {
+									obj = o,
+									order = table.keyFromValue(self._render_order, o),
+									children = {}
+								})
+								refs[o] = objs[#objs]
 							end
 							
-							draw(objs)
+							table.remove(todo, 1)
 						end
+						
+						draw(objs)
 					end
 					
 					self._redraw = {}

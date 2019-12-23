@@ -1,3 +1,5 @@
+--@name GUI2 Example
+--@author Sevii
 --@include ../lib/gui2.lua
 --@client
 

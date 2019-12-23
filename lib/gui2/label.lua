@@ -82,7 +82,7 @@ return {
 			
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			render.drawText(ax == 0 and to2 or (ax == 1 and w / 2 or w - to2), ay == 3 and to2 or (ay == 1 and to2 or h - th), self.text, ax)
+			render.drawText(ax == 0 and to2 or (ax == 1 and w / 2 or w - to2), ay == 3 and to2 or (ay == 1 and to2 or h - th), self._text, ax)
 		end
 	},
 	
