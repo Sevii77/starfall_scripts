@@ -53,13 +53,6 @@ return {
         
         ------------------------------
         
-        onDraw = function(self, w, h)
-            render.setColor(Color(255,0,0,50))
-            render.drawRect(0,0,w,h)
-        end,
-        
-        ------------------------------
-        
         addItem = function(self, obj)
             for i, o in pairs(self._items) do
                 if o == obj then return end
