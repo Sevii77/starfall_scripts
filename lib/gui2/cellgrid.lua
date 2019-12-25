@@ -15,9 +15,8 @@ return {
         
         _spacing_x = 5,
         _spacing_y = 5,
-        
-        _grid_size_x = 5,
-        _grid_size_y = 5,
+        _grid_size_x = 2,
+        _grid_size_y = 2,
         
         ------------------------------
         
@@ -41,7 +40,7 @@ return {
                 obj._size.y = obj._h
                 
                 obj._calculate_global_pos = true
-				            obj._calculate_bounding = true
+                obj._calculate_bounding = true
                 obj:_changed()
             end
             
@@ -141,6 +140,51 @@ return {
             end
         },
         
+        -------------------------------
+        
+        gridSize = {
+            set = function(self, x, y)
+                if y then
+                    self._grid_size_x = x
+                    self._grid_size_y = y
+                else
+                    self._grid_size_x = x.x
+                    self._grid_size_y = x.y
+                end
+                
+                self:_applyGridding()
+            end,
+            
+            get = function(self)
+                return self._grid_size_x, self._grid_size_y
+            end
+        },
+        
+        
+        gridSizeX = {
+            set = function(self, x)
+                self._grid_size_x = x
+                
+                self:_applyGridding()
+            end,
+            
+            get = function(self)
+                return self._grid_size_x
+            end
+        },
+        
+        
+        gridSizeY = {
+            set = function(self, x)
+                self._grid_size_y = x
+                
+                self:_applyGridding()
+            end,
+            
+            get = function(self)
+                return self._grid_size_y
+            end
+        },
     }
     
 }
