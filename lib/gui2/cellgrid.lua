@@ -72,10 +72,10 @@ return {
 			}
 			
 			obj._posChanged = function(o, ox, oy, internal)
-				tbl.x = o.x
-				tbl.y = o.y
-				
 				if not internal then
+					tbl.x = o.x
+					tbl.y = o.y
+					
 					self:_applyGridding()
 				end
 				
@@ -83,10 +83,10 @@ return {
 			end
 			
 			obj._sizeChanged = function(o, ow, oh, internal)
-				tbl.w = o.w
-				tbl.h = o.h
-				
 				if not internal then
+					tbl.w = o.w
+					tbl.h = o.h
+					
 					self:_applyGridding()
 				end
 				
