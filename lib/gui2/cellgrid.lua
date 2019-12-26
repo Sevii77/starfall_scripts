@@ -33,11 +33,13 @@ return {
                 obj._y = (obj_data.y - 1) * (sy + self._spacing_y)
                 obj._pos.x = obj._x
                 obj._pos.y = obj._y
+                obj:_posChanged(obj._x, obj._y)
                 
                 obj._w = sx * obj_data.w + self._spacing_x * (obj_data.w - 1)
                 obj._h = sy * obj_data.h + self._spacing_y * (obj_data.h - 1)
                 obj._size.x = obj._w
                 obj._size.y = obj._h
+                obj:_sizeChanged(obj._w, obj._h)
                 
                 obj._calculate_global_pos = true
                 obj._calculate_bounding = true
@@ -69,20 +71,24 @@ return {
                 h = obj.h
             }
             
-            obj._posChanged = function(o, ox, oy)
+            obj._posChanged = function(o, ox, oy, internal)
                 tbl.x = o.x
                 tbl.y = o.y
                 
-                self:_applyGridding()
+                if not internal then
+                    self:_applyGridding()
+                end
                 
                 tbl.posChanged(o, ox, oy)
             end
             
-            obj._sizeChanged = function(o, ow, oh)
+            obj._sizeChanged = function(o, ow, oh, internal)
                 tbl.w = o.w
                 tbl.h = o.h
                 
-                self:_applyGridding()
+                if not internal then
+                    self:_applyGridding()
+                end
                 
                 tbl.sizeChanged(o, ow, oh)
             end
