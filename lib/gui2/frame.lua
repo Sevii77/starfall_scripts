@@ -86,6 +86,8 @@ return {
 					if nx ~= self._x or ny ~= self._y then
 						self.x = nx
 						self.y = ny
+						
+						self:onDrag()
 					end
 				else
 					local nw = math.max(self._min_x, math.floor(x - self._x + g.x))
@@ -100,6 +102,8 @@ return {
 						elseif g.sizey then
 							self.h = nh
 						end
+						
+						self:onResize()
 					end
 				end
 			end
