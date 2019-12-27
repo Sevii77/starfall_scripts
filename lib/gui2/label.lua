@@ -15,6 +15,8 @@ return {
 		_font = false,
 		_text_alignment_x = 1,
 		_text_alignment_y = 1,
+		_text_offset_x = false,
+		_text_offset_y = false,
 		_text_wrap = false,
 		
 		_text_raw = "",
@@ -77,12 +79,11 @@ return {
 			
 			local ax, ay = self._text_alignment_x, self._text_alignment_y
 			local th = self._text_height
-			local to = h - th
-			local to2 = to / 2
+			local tox, toy = self:getTextOffset()
 			
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			render.drawText(ax == 0 and to2 or (ax == 1 and w / 2 or w - to2), ay == 3 and to2 or (ay == 1 and to2 or h - th), self._text, ax)
+			render.drawText(ax == 0 and tox or (ax == 1 and w / 2 or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), self._text, ax)
 		end
 	},
 	
@@ -154,6 +155,19 @@ return {
 			end
 		},
 		
+		textAlignment = {
+			set = function(self, x, y)
+				self._text_alignment_x = x
+				self._text_alignment_y = y
+				
+				self:_changed(true)
+			end,
+			
+			get = function(self)
+				return self._text_alignment_x, self._text_alignment_y
+			end
+		},
+		
 		textAlignmentX = {
 			set = function(self, x)
 				self._text_alignment_x = x
@@ -178,16 +192,45 @@ return {
 			end
 		},
 		
-		textAlignment = {
+		textOffset = {
 			set = function(self, x, y)
-				self._text_alignment_x = x
-				self._text_alignment_y = y
+				if y then
+					self._text_offset_x = x
+					self._text_offset_y = y
+				else
+					self._text_offset_x = x.x
+					self._text_offset_y = x.y
+				end
 				
-				self:_changed(true)
+				self:_changed()
 			end,
 			
 			get = function(self)
-				return self._text_alignment_x, self._text_alignment_y
+				return self._text_offset_x or (self._h - self._text_height) / 2, self._text_offset_y or (self._h - self._text_height) / 2
+			end
+		},
+		
+		textOffsetX = {
+			set = function(self, value)
+				self._text_offset_x = value
+				
+				self:_changed()
+			end,
+			
+			get = function(self)
+				return self._text_offset_x or (self._h - self._text_height) / 2
+			end
+		},
+		
+		textOffsetY = {
+			set = function(self, value)
+				self._text_offset_y = value
+				
+				self:_changed()
+			end,
+			
+			get = function(self)
+				return self._text_offset_y or (self._h - self._text_height) / 2
 			end
 		},
 		

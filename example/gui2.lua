@@ -161,6 +161,7 @@ do -- Basic example
 				local debug = gui:create("checkbox")
 				debug.style = 2
 				debug.text = "Debug Rendering"
+				debug.textOffsetX = 5
 				debug.state = debug_rendering
 				debug:setCornerStyle(1, 1, 0, 0)
 				grid:addItem(debug)
@@ -171,6 +172,7 @@ do -- Basic example
 				local direct = gui:create("checkbox")
 				direct.style = 2
 				direct.text = "Direct Rendering"
+				direct.textOffsetX = 5
 				direct.state = direct_rendering
 				direct.cornerStyle = 0
 				grid:addItem(direct)

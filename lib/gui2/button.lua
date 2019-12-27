@@ -122,10 +122,12 @@ return {
 			
 			-- Text
 			local ax, ay = self._text_alignment_x, self._text_alignment_y
+			local th = self._text_height
+			local tox, toy = self:getTextOffset()
 			
 			render.setFont(self.font)
 			render.setColor(self.textColor)
-			render.drawText(ax == 0 and 0 or (ax == 1 and w / 2 or w), ay == 3 and 0 or (ay == 1 and (h - self._text_height) / 2 or h - self._text_height), self.text, ax)
+			render.drawText(ax == 0 and tox or (ax == 1 and w / 2 or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), self._text, ax)
 		end,
 		
 		onClick = function(self) end,

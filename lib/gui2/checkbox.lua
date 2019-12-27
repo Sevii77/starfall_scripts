@@ -138,12 +138,12 @@ return {
 					
 					-- Text
 					local ax, ay = self._text_alignment_x, self._text_alignment_y
-					local o = h - self._text_height
-					local o2 = o / 2
+					local th = self._text_height
+					local tox, toy = self:getTextOffset()
 					
 					render.setFont(self.font)
 					render.setColor(self.textColor)
-					render.drawText(ax == 0 and h * 2 + o2 or (ax == 1 and (w - h * 2) / 2 + h * 2 or w - o2), ay == 3 and 0 or (ay == 1 and o2 or o), self.text, ax)
+					render.drawText(ax == 0 and h * 2 + tox or (ax == 1 and (w - h * 2) / 2 + h * 2 or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), self._text, ax)
 				end
 			},
 			
@@ -182,12 +182,12 @@ return {
 					
 					-- Text
 					local ax, ay = self._text_alignment_x, self._text_alignment_y
-					local o = h - self._text_height
-					local o2 = o / 2
+					local th = self._text_height
+					local tox, toy = self:getTextOffset()
 					
 					render.setFont(self.font)
 					render.setColor(self.textColor)
-					render.drawText(ax == 0 and h + o2 or (ax == 1 and (w - h) / 2 + h or w - o2), ay == 3 and 0 or (ay == 1 and o2 or o), self.text, ax)
+					render.drawText(ax == 0 and h + tox or (ax == 1 and (w - h) / 2 + h or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), self._text, ax)
 				end
 			}
 		},
