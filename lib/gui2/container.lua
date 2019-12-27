@@ -27,6 +27,7 @@ return {
 		_corner_style = {},
 		_corner_size = {},
 		_border_size = false,
+		_clamp_corner_size = true,
 		
 		_main_color = false,
 		
@@ -161,7 +162,23 @@ return {
 				local t = self._corner_size
 				local d = self._theme.cornerSize
 				
+				if self._clamp_corner_size then
+					d = math.min(d, self._w / 2, self._h / 2)
+				end
+				
 				return t.tl or d, t.tr or d, t.br or d, t.bl or d
+			end
+		},
+		
+		clampCorner = {
+			set = function(self, state)
+				self._clamp_corner_size = true
+				
+				self:_changed()
+			end,
+			
+			get = function(self)
+				return self._clamp_corner
 			end
 		},
 		
