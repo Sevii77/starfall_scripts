@@ -206,7 +206,7 @@ return {
 					
 					render.setFont(self.font)
 					render.setColor(self.textColor)
-					render.drawText(ax == 0 and tox or (ax == 1 and w / 2 or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), self._text, ax)
+					render.drawText(ax == 0 and tox or (ax == 1 and w / 2 or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), tostring(self._value), ax)
 				end
 			}
 		},
