@@ -178,7 +178,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._clamp_corner
+				return self._clamp_corner_size
 			end
 		},
 		
