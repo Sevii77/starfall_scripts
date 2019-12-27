@@ -172,7 +172,7 @@ return {
 		
 		clampCorner = {
 			set = function(self, state)
-				self._clamp_corner_size = true
+				self._clamp_corner_size = state
 				
 				self:_changed()
 			end,
