@@ -90,9 +90,12 @@ sbm.loader[0] = function(ss, shader_overwrite)
 		local name = ss:readString()
 		
 		local mat = material.create(shader_overwrite ~= nil and (shader_overwrite and "UnlitGeneric" or "VertexLitGeneric") or (bit.band(flags, 0x02) ~= 0 and "UnlitGeneric" or "VertexLitGeneric"))
+		mat:setInt("$treeSway", 0)
 		
 		if bit.band(flags, 0x01) ~= 0 then
 			mat:setInt("$flags", 0x0100 + 0x0010)
+		else
+			mat:setInt("$flags", 0)
 		end
 		if bit.band(flags, 0x04) ~= 0 then
 			local texture
@@ -101,7 +104,7 @@ sbm.loader[0] = function(ss, shader_overwrite)
 			else
 				texture = ss:readString()
 			end
-			
+			print(texture)
 			mat:setTextureURL("$basetexture", texture, function(_, _, _, _, l) l(0, 0, 1024, 1024) end)
 		end
 		if bit.band(flags, 0x10) ~= 0 then
@@ -130,10 +133,13 @@ sbm.loader[0] = function(ss, shader_overwrite)
 		local vertices = {}
 		local vertex_count = ss:readUInt16()
 		for i = 1, vertex_count do
+			local uv = bit.band(flags, 0x02) ~= 0
+			
 			vertices[i] = {
 				pos = Vector(ss:readFloat(), ss:readFloat(), ss:readFloat()),
 				normal = bit.band(flags, 0x01) ~= 0 and Vector(ss:readFloat(), ss:readFloat(), ss:readFloat()) or nil,
-				uv = bit.band(flags, 0x02) ~= 0 and {u = ss:readFloat(), v = ss:readFloat()} or nil,
+				u = uv and ss:readFloat() or nil,
+				v = uv and ss:readFloat() or nil
 			}
 		end
 		
