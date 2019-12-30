@@ -1,4 +1,4 @@
-import bpy, struct
+import bpy, struct, base64
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
@@ -91,9 +91,10 @@ def encode(context, path, embed_textures):
 					with open(mat.node_tree.nodes["Image Texture"].image.filepath_raw, "rb") as f:
 						texture = f.read()
 					
-					print(len(texture))
-					content.writeU(len(texture), 4)
-					content.writeBytes(texture)
+					# print(len(texture))
+					# content.writeU(len(texture), 4)
+					# content.writeBytes(texture)
+					content.writeString("data:image/png;base64," + str(base64.b64encode(texture), "utf-8"))
 				else:
 					spl = mat.node_tree.nodes["Image Texture"].image.filepath.split("/")
 					
@@ -109,7 +110,7 @@ def encode(context, path, embed_textures):
 		# Objects
 		for obj in objects:
 			# Flags
-			content.writeU(1)
+			content.writeU(0x3)
 			
 			# Name
 			content.writeString(obj.name)
@@ -123,32 +124,52 @@ def encode(context, path, embed_textures):
 			# Scale
 			content.writeFloat(obj.scale.x, obj.scale.y, obj.scale.z)
 			
-			# Vertex count
-			vertices = obj.data.vertices
-			content.writeU(len(vertices), 2)
-			
-			# Vertices
-			for vertex in vertices:
-				content.writeFloat(vertex.co.x, vertex.co.y, vertex.co.z)
-				content.writeFloat(vertex.normal.x, vertex.normal.y, vertex.normal.z)
-			
-			# Segment count
-			materials = obj.material_slots
-			content.writeU(len(materials))
-			
-			# Segments
+			#map blender vertices (position, normal) and uv to our vertex representation (position, normal and uv)
+			seenVertices = {}
+			seenVertexList = []
+			def registerVertex(vertex, uv = None):
+				key = ((vertex.co.x, vertex.co.y, vertex.co.z), (vertex.normal.x, vertex.normal.y, vertex.normal.z), (uv[0], uv[1]))
+				index = seenVertices.get(key)
+				if index is None:
+					seenVertexList.append((vertex, uv))
+					index = len(seenVertices)
+					seenVertices[key] = index
+				return index
+				
+			# Create segments
 			segments = {}
 			for face in obj.data.polygons:
 				if not face.material_index in segments:
 					segments[face.material_index] = []
 				
+				vertMap = {} #account for UV within face
+				for vert_idx, loop_idx in zip(face.vertices, face.loop_indices):
+					uv_coords = obj.data.uv_layers.active.data[loop_idx].uv
+					vertMap[vert_idx] = registerVertex(obj.data.vertices[vert_idx], (uv_coords.x, uv_coords.y))
+					print("face idx: %i, vert idx: %i, uvs: %f, %f" % (face.index, vert_idx, uv_coords.x, uv_coords.y))
+					
 				vertices = face.vertices
 				for i in range(2, len(vertices)):
-					segments[face.material_index].append((vertices[0], vertices[i - 1], vertices[i]))
+					segments[face.material_index].append((vertMap[vertices[0]], vertMap[vertices[i - 1]], vertMap[vertices[i]]))
+				
+			# Vertex count
+			vertices = seenVertexList
+			content.writeU(len(vertices), 4)
 			
+			# Vertices
+			for vertex, uv in vertices:
+				content.writeFloat(vertex.co.x, vertex.co.y, vertex.co.z)
+				content.writeFloat(vertex.normal.x, vertex.normal.y, vertex.normal.z)
+				content.writeFloat(uv[0], uv[1])
+			
+			# Segment count
+			materials = obj.material_slots
+			content.writeU(len(materials))
+			
+			# Write created segments
 			for mat, vertices in segments.items():
 				content.writeU(material_list[obj][materials[mat]] + 1)
-				content.writeU(len(vertices), 2)
+				content.writeU(len(vertices), 4)
 				
 				for vertex in vertices:
 					content.writeU(vertex[0], 2)
