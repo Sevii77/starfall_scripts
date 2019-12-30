@@ -92,7 +92,7 @@ return {
 			self._box_poly = poly
 		end,
 		
-		_sizeChanged = function(self, ow, h)
+		_sizeChanged = function(self, ow, oh)
 			if oh ~= self._h then
 				self:_createBoxPoly()
 			end

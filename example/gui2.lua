@@ -317,9 +317,18 @@ do -- Bidirection scrolling + other stuff
 		content.cornerStyle = 0
 		scrollframe.content = content
 		
+		local vertical_slider = gui:create("slider", content)
+		vertical_slider.size = Vector(20, 60)
+		
+		local vertical_slider = gui:create("slider", content)
+		vertical_slider.pos = Vector(20, 0)
+		vertical_slider.size = Vector(20, 60)
+		vertical_slider.style = 2
+		vertical_slider.round = 1
+		
 		for i = 1, 10 do
 			local button = gui:create("button", content)
-			button.pos = Vector(i * 30)
+			button.pos = Vector(i * 30 + 30)
 			button.text = tostring(i)
 			
 			fancy = button

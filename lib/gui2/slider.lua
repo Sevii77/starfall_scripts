@@ -33,6 +33,7 @@ return {
 		_value = 0,
 		_progress = 0,
 		_holding = false,
+		_horizontal = true,
 		_shape_poly = nil,
 		
 		------------------------------
@@ -86,7 +87,9 @@ return {
 			self._shape_poly = poly
 		end,
 		
-		_sizeChanged = function(self, ow, h)
+		_sizeChanged = function(self)
+			self._horizontal = self._w > self._h
+			
 			self:_createShapePoly()
 		end,
 		
@@ -103,7 +106,7 @@ return {
 					if self._holding then
 						if cx then
 							local last = self._progress
-							local progress = math.clamp((cx - self._h / 2) / (self._w - self._h), 0, 1)
+							local progress = math.clamp(self._horizontal and ((cx - self._h / 2) / (self._w - self._h)) or (((self._h - cy) - self._w / 2) / (self._h - self._w)), 0, 1)
 							self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
 							self._progress = (self._value - self._min) / (self._max - self._min)
 							
@@ -128,20 +131,33 @@ return {
 					
 					-- Bar
 					local p = self._progress
-					local bh = self._bar_size
-					local bw = w - h + bh
-					local bo = (h - bh) / 2
 					
-					render.setColor(self.activeColor)
-					render.drawRect(bo, bo, bw * p, bh)
-					
-					render.setColor(self.mainColor)
-					render.drawRect(bo + bw * p, bo, bw * (1 - p), bh)
+					if self._horizontal then
+						local bh = self._bar_size
+						local bw = w - h + bh
+						local bo = (h - bh) / 2
+						
+						render.setColor(self.activeColor)
+						render.drawRect(bo, bo, bw * p, bh)
+						
+						render.setColor(self.mainColor)
+						render.drawRect(bo + bw * p, bo, bw * (1 - p), bh)
+					else
+						local bh = self._bar_size
+						local bw = h - w + bh
+						local bo = (w - bh) / 2
+						
+						render.setColor(self.activeColor)
+						render.drawRect(bo, bo + bw * (1 - p), bh, bw * p)
+						
+						render.setColor(self.mainColor)
+						render.drawRect(bo, bo, bh, bw * (1 - p))
+					end
 					
 					-- Knob
 					local m = Matrix()
-					m:setTranslation(Vector((w - h) * p + h / 2, h / 2))
-					m:setScale(Vector(h))
+					m:setTranslation(self._horizontal and Vector((w - h) * p + h / 2, h / 2) or Vector(w / 2, (h - w) * (1 - p) + w / 2))
+					m:setScale(Vector(self._horizontal and h or w))
 					render.pushMatrix(m)
 					render.setColor(GUI.lerpColor(self.activeColor, self.hoverColor, self:getAnimation("hover")))
 					render.drawPoly(circle)
@@ -160,7 +176,7 @@ return {
 					if self._holding then
 						if cx then
 							local last = self._progress
-							local progress = math.clamp(cx / self._w, 0, 1)
+							local progress = math.clamp(self._horizontal and (cx / self._w) or ((self._h - cy) / self._h), 0, 1)
 							self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
 							self._progress = (self._value - self._min) / (self._max - self._min)
 							
@@ -185,19 +201,27 @@ return {
 					
 					if hover > 0 then
 						render.setColor(clr)
-						render.drawRect(w * p, 0, w * (1 - p), h)
+						if self._horizontal then
+							render.drawRect(w * p, 0, w * (1 - p), h)
+						else
+							render.drawRect(0, 0, w, h * (1 - p))
+						end
 					end
 					
 					local m = Matrix()
 					m:setTranslation(Vector(w / 2, h / 2))
-					m:setScale(Vector(1 - hcp * (h / w), 1 - hcp))
+					m:setScale(Vector(1 - hcp * (self._horizontal and (h / w) or 1), 1 - hcp * (self._horizontal and 1 or (w / h))))
 					render.pushMatrix(m)
 					render.setColor(self.mainColor)
 					render.drawPoly(self._shape_poly)
 					render.popMatrix()
 					
 					render.setColor(clr)
-					render.drawRect(0, 0, w * p, h)
+					if self._horizontal then
+						render.drawRect(0, 0, w * p, h)
+					else
+						render.drawRect(0, h * (1 - p), w, h * p)
+					end
 					
 					-- Text
 					local ax, ay = self._text_alignment_x, self._text_alignment_y
