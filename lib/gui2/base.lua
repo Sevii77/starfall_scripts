@@ -365,17 +365,30 @@ return {
 			self:onDrawOver(self._w, self._h)
 		end,
 		
+		_postdraw = function(self, dt)
+			self:onPostDraw(self._w, self._h)
+		end,
+		
+		_think = function(self, dt, cx, cy)
+			
+		end,
+		
 		_postthink = function(self)
 			-- Used to only do things once, for example instead of calling something directly from setters set a flag to do it once
+			local object = self._gui._object_refs[self]
 			
 			if self._calculate_global_pos then
 				self._calculate_global_pos = false
 				self:_calculateGlobalPos()
+			else
+				object.global_pos_last = object.global_pos
 			end
 			
 			if self._calculate_bounding then
 				self._calculate_bounding = false
 				self:_calculateBounding()
+			else
+				object.bounding_last = object.bounding
 			end
 			
 			if self._calculate_cells then
@@ -389,10 +402,6 @@ return {
 			-- end
 			
 			self._first = false
-		end,
-		
-		_think = function(self, dt, cx, cy)
-			
 		end,
 		
 		_press = function(self)
@@ -430,7 +439,8 @@ return {
 		------------------------------
 		
 		onDraw = function(self, w, h) end,
-		onDrawOver = function(self, size) end,
+		onDrawOver = function(self, w, h) end,
+		onPostDraw = function(self, w, h) end,
 		onAnimationChange = function(self, anim, value) end
 	},
 	

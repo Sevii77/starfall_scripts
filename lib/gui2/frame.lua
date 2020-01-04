@@ -40,6 +40,8 @@ return {
 		_dragcorner_size = 10,
 		_dragbar_size = 3,
 		_animation_speed = false,
+		_resize_fps = 5,
+		_resize_overlay = true,
 		
 		_dragable = true,
 		_closeable = true,
@@ -52,6 +54,8 @@ return {
 		_closed = false,
 		_text_height = 0,
 		_close_hovering = false,
+		
+		_dt = 0,
 		
 		------------------------------
 		
@@ -75,37 +79,43 @@ return {
 		------------------------------
 		
 		_think = function(self, dt)
-			local x, y = self._gui:getCursorPos(self.parent)
-			local g = self._grab
+			self._dt = self._dt + dt
 			
-			if x and g then
-				if g.move then
-					local nx = math.floor(x - g.x)
-					local ny = math.floor(y - g.y)
-					
-					if nx ~= self._x or ny ~= self._y then
-						self.x = nx
-						self.y = ny
+			if self._dt >= 1 / self._resize_fps then
+				local x, y = self._gui:getCursorPos(self.parent)
+				local g = self._grab
+				
+				if x and g then
+					if g.move then
+						local nx = math.floor(x - g.x)
+						local ny = math.floor(y - g.y)
 						
-						self:onDrag()
-					end
-				else
-					local nw = math.max(self._min_x, math.floor(x - self._x + g.x))
-					local nh = math.max(self._min_y, math.floor(y - self._y + g.y))
-					
-					if nw ~= self._w or nh ~= self._h then
-						if g.size then
-							self.w = nw
-							self.h = nh
-						elseif g.sizex then
-							self.w = nw
-						elseif g.sizey then
-							self.h = nh
+						if nx ~= self._x or ny ~= self._y then
+							self.x = nx
+							self.y = ny
+							
+							self:onDrag()
 						end
+					else
+						local nw = math.max(self._min_x, math.floor(x - self._x + g.x))
+						local nh = math.max(self._min_y, math.floor(y - self._y + g.y))
 						
-						self:onResize()
+						if nw ~= self._w or nh ~= self._h then
+							if g.size then
+								self.w = nw
+								self.h = nh
+							elseif g.sizex then
+								self.w = nw
+							elseif g.sizey then
+								self.h = nh
+							end
+							
+							self:onResize()
+						end
 					end
 				end
+				
+				self._dt = 0
 			end
 			
 			self:_animationUpdate("close_hover", self._close_hovering, dt * self.animationSpeed, true)
@@ -248,6 +258,39 @@ return {
 			end
 		end,
 		
+		onPostDraw = function(self, w, h)
+			if not self._resize_overlay then return end
+			
+			local x, y = self._gui:getCursorPos(self.parent)
+			local g = self._grab
+			
+			if x and g then
+				local dx, dy, dw, dh = self._x, self._y, w, h
+				
+				if g.move then
+					dx = math.floor(x - g.x)
+					dy = math.floor(y - g.y)
+				else
+					local nw = math.max(self._min_x, math.floor(x - self._x + g.x))
+					local nh = math.max(self._min_y, math.floor(y - self._y + g.y))
+					
+					if nw ~= self._w or nh ~= self._h then
+						if g.size then
+							dw = nw
+							dh = nh
+						elseif g.sizex then
+							dw = nw
+						elseif g.sizey then
+							dh = nh
+						end
+					end
+				end
+				
+				render.setRGBA(255, 255, 255, 20)
+				render.drawRect(dx, dy, dw, dh)
+			end
+		end,
+		
 		onDrag = function(self) end,
 		onClose = function(self) --[[retrun true to supress the default removal of the element]] end,
 		onResize = function(self) end
@@ -382,6 +425,26 @@ return {
 			
 			get = function(self)
 				return self._animation_speed or self._theme.animationSpeed
+			end
+		},
+		
+		resizeFPS = {
+			set = function(self, value)
+				self._resize_fps = value
+			end,
+			
+			get = function(self)
+				return self._resize_fps
+			end
+		},
+		
+		resizeOverlay = {
+			set = function(self, value)
+				self._resize_overlay = value
+			end,
+			
+			get = function(self)
+				return self._resize_overlay
 			end
 		},
 		
