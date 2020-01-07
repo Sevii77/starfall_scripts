@@ -40,7 +40,7 @@ return {
 		_dragcorner_size = 10,
 		_dragbar_size = 3,
 		_animation_speed = false,
-		_resize_fps = 5,
+		_resize_fps = 0,
 		_resize_overlay = true,
 		
 		_dragable = true,
@@ -56,6 +56,7 @@ return {
 		_close_hovering = false,
 		
 		_dt = 0,
+		_domove = false,
 		
 		------------------------------
 		
@@ -82,8 +83,13 @@ return {
 			self._dt = self._dt + dt
 			
 			if self._dt >= 1 / self._resize_fps then
+				self._domove = true
+				self._dt = 0
+			end
+			
+			if self._domove then
 				local x, y = self._gui:getCursorPos(self.parent)
-				local g = self._grab
+				local g = self._grab or self._lastgrab
 				
 				if x and g then
 					if g.move then
@@ -115,7 +121,8 @@ return {
 					end
 				end
 				
-				self._dt = 0
+				self._lastgrab = nil
+				self._domove = false
 			end
 			
 			self:_animationUpdate("close_hover", self._close_hovering, dt * self.animationSpeed, true)
@@ -178,7 +185,9 @@ return {
 		
 		_release = function(self)
 			if self._grab then
+				self._lastgrab = self._grab
 				self._grab = false
+				self._domove = true
 				self:_cursorMode(GUI.CURSORMODE.NORMAL)
 			end
 		end,
