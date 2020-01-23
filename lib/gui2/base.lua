@@ -706,8 +706,10 @@ return {
 			set = function(self, l, t, r, b)
 				if type(l) == "table" then
 					self._dock.margin = {l = l.l, t = l.t, r = l.r, b = l.b}
-				else
+				elseif b then
 					self._dock.margin = {l = l, t = t, r = r, b = b}
+				else
+					self._dock.margin = {l = l, t = l, r = l, b = l}
 				end
 				
 				self:_updateDockingParent()
@@ -724,8 +726,10 @@ return {
 			set = function(self, l, t, r, b)
 				if type(l) == "table" then
 					self._dock.padding = {l = l.l, t = l.t, r = l.r, b = l.b}
-				else
+				elseif b then
 					self._dock.padding = {l = l, t = t, r = r, b = b}
+				else
+					self._dock.padding = {l = l, t = l, r = l, b = l}
 				end
 				
 				self:_updateDocking()

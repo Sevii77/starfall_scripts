@@ -18,7 +18,7 @@ local sbm = {
 
 -- Needed because http.base64Encode adds newlines, and in order to create a texture they need to be removed, doing this on large textures crashes linux clients
 -- Source: http://lua-users.org/wiki/BaseSixtyFour
-local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+--[[local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 local function base64Encode(data)
 	return ((data:gsub('.', function(x) 
 		local r,b='',x:byte()
@@ -30,7 +30,7 @@ local function base64Encode(data)
 		for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
 		return b:sub(c+1,c+1)
 	end)..({ '', '==', '=' })[#data%3+1])
-end
+end]]
 
 --[[
 SBM Simple Binary Model (v0)
@@ -124,7 +124,7 @@ sbm.loader[0] = function(ss, shader_overwrite)
 			-- 	texture = ss:readString()
 			-- end
 			local texture = ss:readString()
-			mat:setTextureURL("$basetexture", texture, function(_, _, _, _, l) l(0, 0, 1024, 1024) end)
+			mat:setTextureURL("$basetexture", texture, function(_, _, _, _, l) if l then l(0, 0, 1024, 1024) end end)
 		end
 		if bit.band(flags, 0x10) ~= 0 then
 			-- local texture
@@ -134,7 +134,7 @@ sbm.loader[0] = function(ss, shader_overwrite)
 			-- 	texture = ss:readString()
 			-- end
 			local texture = ss:readString()
-			mat:setTextureURL("$bumpmap", texture, function(_, _, _, _, l) l(0, 0, 1024, 1024) end)
+			mat:setTextureURL("$bumpmap", texture, function(_, _, _, _, l) if l then l(0, 0, 1024, 1024) end end)
 		end
 		
 		materials[i] = mat

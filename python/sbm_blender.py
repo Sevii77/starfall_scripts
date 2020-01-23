@@ -2,6 +2,7 @@ import bpy, struct, base64
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
+import bpy.path
 
 # ------------------------------
 
@@ -88,7 +89,7 @@ def encode(context, path, embed_textures):
 			if has_albedo:
 				if embed_textures:
 					texture = None
-					with open(mat.node_tree.nodes["Image Texture"].image.filepath_raw, "rb") as f:
+					with open(bpy.path.abspath(mat.node_tree.nodes["Image Texture"].image.filepath_raw), "rb") as f:
 						texture = f.read()
 					
 					# print(len(texture))

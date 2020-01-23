@@ -24,20 +24,21 @@ return {
 		
 		------------------------------
 		
-		_wrapText = function(self)
+		_wrapText = function(self, text)
 			local str = ""
 			local line = ""
 			local height = nil
 			
-			self._text_height = 0
+			local text_height = 0
+			-- self._text_height = 0
 			render.setFont(self.font)
 			
-			for spacer, word in string.gmatch(self._text_raw, "(%s*)(%S+)") do
+			for spacer, word in string.gmatch(text, "(%s*)(%S*)") do
 				if string.find(spacer, "\n") then
 					str = str .. line .. "\n"
 					line = word
 					
-					self._text_height = self._text_height + height
+					text_height = text_height + height
 				else
 					local w, h = render.getTextSize(line .. spacer .. word)
 					
@@ -49,7 +50,7 @@ return {
 						str = str .. line .. "\n"
 						line = word
 						
-						self._text_height = self._text_height + height
+						text_height = text_height + height
 					else
 						line = line .. spacer .. word
 					end
@@ -59,10 +60,10 @@ return {
 			if #line > 0 then
 				str = str .. line
 				
-				self._text_height = self._text_height + height
+				text_height = text_height + height
 			end
 			
-			self._text = str
+			return str, text_height
 		end,
 		
 		_setTextHeight = function(self)
@@ -125,7 +126,7 @@ return {
 				self:_changed(true)
 				
 				if self._text_wrap then
-					self:_wrapText()
+					self._text, self._text_height = self:_wrapText(self._text_raw)
 				else
 					self._text = self._text_raw
 					self:_setTextHeight()
@@ -144,7 +145,7 @@ return {
 				self:_changed(true)
 				
 				if self._text_wrap then
-					self:_wrapText()
+					self._text, self._text_height = self:_wrapText(self._text_raw)
 				else
 					self:_setTextHeight()
 				end
@@ -206,7 +207,7 @@ return {
 			end,
 			
 			get = function(self)
-				return self._text_offset_x or (self._h - self._text_height) / 2, self._text_offset_y or (self._h - self._text_height) / 2
+				return self._text_offset_x or (self._text_alignment_x == 1 and (self._h - self._text_height) / 2 or 0), self._text_offset_y or (self._text_alignment_y == 1 and (self._h - self._text_height) / 2 or 0)
 			end
 		},
 		
@@ -239,11 +240,17 @@ return {
 				self._text_wrap = state
 				
 				self:_changed(true)
-				self:_wrapText()
+				self._text, self._text_height = self:_wrapText(self._text_raw)
 			end,
 			
 			get = function(self)
 				return self._text_wrap
+			end
+		},
+		
+		textHeight = {
+			get = function(self)
+				return self._text_height
 			end
 		}
 	}
