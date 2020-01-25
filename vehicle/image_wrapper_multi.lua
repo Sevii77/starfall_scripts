@@ -382,7 +382,7 @@ else
 						next = 0,
 						frame = 0,
 						count = #data.animation.timing,
-						sheet = render.getTextureID(data.image)
+						sheet = render.createMaterial(data.image)
 					})
 				else
 					mats[i] = material.create((data.full_bright or full_bright) and "UnlitGeneric" or "VertexLitGeneric")
@@ -409,7 +409,7 @@ else
 					
 					render.selectRenderTarget(data.rt)
 					render.clear(Color(0, 0, 0, 0))
-					render.setTexture(data.sheet)
+					render.setMaterial(data.sheet)
 					
 					local u = ((data.frame - 1) % data.xcount) * data.width / 1024
 					local v = math.floor((data.frame - 1) / data.xcount) * data.height / 1024

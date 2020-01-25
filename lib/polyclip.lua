@@ -50,10 +50,37 @@ local function clip(subjectPolygon, clipPolygon)
 	return outputList
 end
 
+-- Just clip but break instantly cuz im lazy and it works so why not, probably improve at some point
+local function clipPlane(subjectPolygon, planePos, planeNormal)
+	local cp1 = planePos
+	local cp2 = planePos + planeNormal:getRotated(Angle(0, 90, 0))
+	
+	local outputList = subjectPolygon
+	local inputList = outputList
+	local s = inputList[#inputList]
+	outputList = {}
+	
+	for _, e in ipairs(inputList) do
+		if inside(e, cp1, cp2) then
+			if not inside(s, cp1, cp2) then
+				outputList[#outputList+1] = intersection(cp1, cp2, s, e)
+			end
+			outputList[#outputList+1] = e
+		elseif inside(s, cp1, cp2) then
+			outputList[#outputList+1] = intersection(cp1, cp2, s, e)
+		end
+		
+		s = e
+	end
+	
+	return outputList
+end
+
 ----------------------------------------
 
 return {
 	inside = inside,
 	intersection = intersection,
-	clip = clip
+	clip = clip,
+	clipPlane = clipPlane
 }
