@@ -1,6 +1,5 @@
 --@name Image Wrapper Multi
 --@author Sevii (https://steamcommunity.com/id/dadamrival/)
---@include ../lib/mesh.lua
 --@include ../lib/polyclip.lua
 
 --[[
@@ -27,6 +26,10 @@
 	to save the positions of the decal projectors type '.save' in chat while looking at the chip
 		when the chip is reloaded or dupe finished it will load the decals.
 		Be sure to remove the projection props before duping because after pasting the dupe will spawn the props and sf also will. 
+	
+	
+	TODO:
+		Make V2 with better performance and better working
 ]]
 
 local decals = {
@@ -557,12 +560,48 @@ else
 	----------------------------------------
 	
 	if player() == owner() then
-		local mesh = require("../lib/mesh.lua")
 		local polyclip = require("../lib/polyclip.lua")
 		
 		local function linePlane(pos, plane_pos, plane_normal)
 			local x = plane_normal:dot(plane_pos - pos) / plane_normal:dot(Vector(0, 0, 9999))
 			return pos + Vector(0, 0, x * 9999)
+		end
+		
+		local function abovePlane(point, plane, plane_dir)
+			return plane_dir:dot(point - plane) > 0
+		end
+		
+		local function linePlaneNew(line_start, line_end, plane, plane_dir)
+			local line = line_end - line_start
+			local dot = plane_dir:dot(line)
+			
+			if math.abs(dot) < 1e-6 then return end
+			
+			return line_start + line * (-plane_dir:dot(line_start - plane) / dot)
+		end
+		
+		local function clipPoly(poly, plane, plane_dir)
+			local n = {}
+			
+			local last = poly[#poly]
+			for _, cur in pairs(poly) do
+				local a = abovePlane(last, plane, plane_dir)
+				local b = abovePlane(cur, plane, plane_dir)
+				
+				if a and b then
+					table.insert(n, cur)
+				elseif a or b then
+					table.insert(n, linePlaneNew(last, cur, plane, plane_dir))
+					
+					if b then
+						table.insert(n, cur)
+					end
+				end
+				
+				last = cur
+			end
+			
+			return n
 		end
 		
 		net.receive("map", function()
@@ -584,59 +623,90 @@ else
 					ents_sorted[parent] = tbl
 				end
 				
+				local s = decals[projector_id].size / 2
+				local cliparea = {Vector(-s.x, -s.y), Vector(s.x, -s.y), Vector(s.x, s.y), Vector(-s.x, s.y)}
+				
 				vertices_sorted[projector_id] = {}
 				local ang = projector_ent:getAngles()
 				for parent, ents in pairs(ents_sorted) do
-					local vertices = {}
-					
-					for _, vertex in pairs(mesh.getEntityVertices(ents, Vector())) do
-						table.insert(vertices, projector_ent:worldToLocal(vertex.pos))
-					end
-					
 					local new = {}
-					for i = 1, #vertices, 3 do
-						local a = vertices[i]
-						local b = vertices[i + 1]
-						local c = vertices[i + 2]
+					for _, ent in pairs(ents) do
+						local ent_pos = ent:getPos()
+						local ent_ang = ent:getAngles()
+						local clipping = ent:getClipping()
 						
-						if a.z < 0 then continue end
-						if b.z < 0 then continue end
-						if c.z < 0 then continue end
+						local vertices = {}
+						for _, data in pairs(mesh.getModelMeshes(ent:getModel(), 0, 0)) do
+							local verts = data.triangles
+							for _, clip in pairs(clipping) do
+								local v = {}
+								for i = 1, #verts, 3 do
+									local poly = clipPoly({
+										verts[i    ].pos,
+										verts[i + 1].pos,
+										verts[i + 2].pos,
+									}, clip.origin, clip.normal)
+									
+									if #poly > 0 then
+										for i = 3, #poly do
+											table.insert(v, {pos = poly[1    ]})
+											table.insert(v, {pos = poly[i - 1]})
+											table.insert(v, {pos = poly[i    ]})
+										end
+									end
+								end
+								verts = v
+							end
+							
+							for _, vertex in pairs(verts) do
+								table.insert(vertices, projector_ent:worldToLocal(vertex.pos:getRotated(ent_ang) + ent_pos))
+							end
+						end
 						
-						local normal = (b - a):cross(c - a):getNormalized()
-						
-						-- Check normal
-						if normal.z < min_face_ang then continue end
-						
-						-- Clip poly
-						local pos_a = Vector(a.x, a.y)
-						local pos_b = Vector(b.x, b.y)
-						local pos_c = Vector(c.x, c.y)
-						
-						local s = decals[projector_id].size / 2
-						local poly = polyclip.clip({pos_a, pos_b, pos_c}, {Vector(-s.x, -s.y), Vector(s.x, -s.y), Vector(s.x, s.y), Vector(-s.x, s.y)})
-						
-						if #poly > 0 then
-							local start = poly[1]
-							for i = 3, #poly do
-								table.insert(new, {
-									pos = linePlane(start, a, normal),
-									normal = normal
-								})
-								
-								table.insert(new, {
-									pos = linePlane(poly[i - 1], a, normal),
-									normal = normal
-								})
-								
-								table.insert(new, {
-									pos = linePlane(poly[i], a, normal),
-									normal = normal
-								})
+						for i = 1, #vertices, 3 do
+							local a = vertices[i]
+							local b = vertices[i + 1]
+							local c = vertices[i + 2]
+							
+							if a.z < 0 then continue end
+							if b.z < 0 then continue end
+							if c.z < 0 then continue end
+							
+							local normal = (b - a):cross(c - a):getNormalized()
+							
+							-- Check normal
+							if normal.z < min_face_ang then continue end
+							
+							-- Clip poly
+							local pos_a = Vector(a.x, a.y)
+							local pos_b = Vector(b.x, b.y)
+							local pos_c = Vector(c.x, c.y)
+							
+							local poly = polyclip.clip({pos_a, pos_b, pos_c}, cliparea)
+							
+							if #poly > 0 then
+								local start = poly[1]
+								for i = 3, #poly do
+									table.insert(new, {
+										pos = linePlane(start, a, normal),
+										normal = normal
+									})
+									
+									table.insert(new, {
+										pos = linePlane(poly[i - 1], a, normal),
+										normal = normal
+									})
+									
+									table.insert(new, {
+										pos = linePlane(poly[i], a, normal),
+										normal = normal
+									})
+								end
 							end
 						end
 					end
 					
+					print(#new)
 					if #new > 0 then
 						vertices_sorted[projector_id][parent] = new
 					end
