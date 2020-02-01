@@ -669,7 +669,6 @@ else
 						end
 					end
 					
-					print(#new)
 					if #new > 0 then
 						vertices_sorted[projector_id][parent] = new
 					end
