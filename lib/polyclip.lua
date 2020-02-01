@@ -77,10 +77,55 @@ local function clipPlane(subjectPolygon, planePos, planeNormal)
 end
 
 ----------------------------------------
+-- 3D
+
+local function abovePlane(point, plane, plane_dir)
+	return plane_dir:dot(point - plane) > 0
+end
+
+local function intersection3D(line_start, line_end, plane, plane_dir)
+	local line = line_end - line_start
+	local dot = plane_dir:dot(line)
+	
+	if math.abs(dot) < 1e-6 then return end
+	
+	return line_start + line * (-plane_dir:dot(line_start - plane) / dot)
+end
+
+local function clipPlane3D(poly, plane, plane_dir)
+	local n = {}
+	
+	local last = poly[#poly]
+	for _, cur in pairs(poly) do
+		local a = abovePlane(last, plane, plane_dir)
+		local b = abovePlane(cur, plane, plane_dir)
+		
+		if a and b then
+			table.insert(n, cur)
+		elseif a or b then
+			table.insert(n, intersection3D(last, cur, plane, plane_dir))
+			
+			if b then
+				table.insert(n, cur)
+			end
+		end
+		
+		last = cur
+	end
+	
+	return n
+end
+
+----------------------------------------
 
 return {
 	inside = inside,
 	intersection = intersection,
 	clip = clip,
-	clipPlane = clipPlane
+	clipPlane = clipPlane,
+	
+	-- 3D
+	abovePlane = abovePlane,
+	intersection3D = intersection3D,
+	clipPlane3D = clipPlane3D
 }

@@ -567,43 +567,6 @@ else
 			return pos + Vector(0, 0, x * 9999)
 		end
 		
-		local function abovePlane(point, plane, plane_dir)
-			return plane_dir:dot(point - plane) > 0
-		end
-		
-		local function linePlaneNew(line_start, line_end, plane, plane_dir)
-			local line = line_end - line_start
-			local dot = plane_dir:dot(line)
-			
-			if math.abs(dot) < 1e-6 then return end
-			
-			return line_start + line * (-plane_dir:dot(line_start - plane) / dot)
-		end
-		
-		local function clipPoly(poly, plane, plane_dir)
-			local n = {}
-			
-			local last = poly[#poly]
-			for _, cur in pairs(poly) do
-				local a = abovePlane(last, plane, plane_dir)
-				local b = abovePlane(cur, plane, plane_dir)
-				
-				if a and b then
-					table.insert(n, cur)
-				elseif a or b then
-					table.insert(n, linePlaneNew(last, cur, plane, plane_dir))
-					
-					if b then
-						table.insert(n, cur)
-					end
-				end
-				
-				last = cur
-			end
-			
-			return n
-		end
-		
 		net.receive("map", function()
 			local vertices_sorted = {}
 			
@@ -641,7 +604,7 @@ else
 							for _, clip in pairs(clipping) do
 								local v = {}
 								for i = 1, #verts, 3 do
-									local poly = clipPoly({
+									local poly = polyclip.clipPlane3D({
 										verts[i    ].pos,
 										verts[i + 1].pos,
 										verts[i + 2].pos,
