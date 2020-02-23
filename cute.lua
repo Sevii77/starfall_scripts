@@ -1,5 +1,6 @@
 local count = 40
 local jump_delay = 2
+local volume = 0.5
 
 local img = "https://u.teknik.io/vzisz.png"
 local sounds = {
@@ -165,6 +166,7 @@ else
 				
 				local pitch = math.rand(0.9, 1.1)
 				data.sound:setPitch(pitch)
+				data.sound:setVolume(volume * math.rand(0.8, 1.2))
 				
 				data.next_sound = time + math.rand(3, 6)
 				data.pause_sound = time + data.sound:getLength() * pitch - timer.frametime() * 2
