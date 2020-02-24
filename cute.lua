@@ -1,4 +1,7 @@
-local count = 40
+--@name Cuties
+--@author Sevii
+
+local count = 50
 local jump_delay = 2
 local volume = 0.5
 
@@ -55,7 +58,10 @@ if SERVER then
 			net.send()
 		end
 		
+		local new = {}
 		for _, ent in pairs(ents) do
+			if isValid(ent.ent) then table.insert(new, ent) end
+			
 			if time >= ent.next_jump then
 				ent.next_jump = time + math.rand(jump_delay * 0.8, jump_delay * 1.2)
 				
@@ -70,6 +76,7 @@ if SERVER then
 				ent.ent:applyForceCenter(((target:getPos() - p):getNormalized() + Vector(0, 0, 1)) * power)
 			end
 		end
+		ents = new
 	end)
 	
 	net.receive("", function(_, ply)
