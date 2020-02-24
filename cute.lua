@@ -5,7 +5,14 @@ local count = 50
 local jump_delay = 2
 local volume = 0.5
 
+local size = 7
+local offset = Vector()
 local img = "https://u.teknik.io/vzisz.png"
+
+-- local size = 12
+-- local offset = Vector(0, 0, 20)
+-- local img = "https://u.teknik.io/Q0PCw.png"
+
 local sounds = {
 	"https://u.teknik.io/ZqXJ1.ogg",
 	"https://u.teknik.io/6z7mf.ogg",
@@ -105,7 +112,7 @@ else
 	
 	local mat = material.create("UnlitGeneric")
 	mat:setInt("$flags", 0x0100 + 0x0010 + 0x2000)
-	mat:setTextureURL("$basetexture", "https://u.teknik.io/vzisz.png")
+	mat:setTextureURL("$basetexture", img)
 	
 	local p1 = {pos = Vector(-3, -3, 0), normal = Vector(0, 0, 1), u = 0, v = 1}
 	local p2 = {pos = Vector( 3, -3, 0), normal = Vector(0, 0, 1), u = 1, v = 1}
@@ -126,6 +133,7 @@ else
 				local holo = holograms.create(Vector(), Angle(), "models/sprops/cuboids/height06/size_1/cube_6x6x6.mdl")
 				holo:setMesh(m)
 				holo:setMeshMaterial(mat)
+				holo:setRenderBounds(Vector(-size * 3), Vector(size * 3))
 				
 				ents[id] = {
 					holo = holo,
@@ -146,11 +154,11 @@ else
 			
 			if not isValid(ent) then continue end
 			
-			local p = ent:getPos()
+			local p = ent:getPos() + offset
 			
 			-- sprite
 			local m = Matrix()
-			m:setScale(Vector(7))
+			m:setScale(Vector(size))
 			m:setAngles((p - eyePos()):getAngle())
 			m:rotate(Angle(0, -90, 90))
 			
