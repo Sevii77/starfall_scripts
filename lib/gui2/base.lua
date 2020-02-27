@@ -424,7 +424,7 @@ return {
 			
 		end,
 		
-		_hover = function(self)
+		_hover = function(self, dt)
 			
 		end,
 		
@@ -528,6 +528,24 @@ return {
 		},
 		
 		------------------------------
+		
+		globalPos = {
+			get = function(self)
+				return self._gui._object_refs[self].global_pos
+			end
+		},
+		
+		globalX = {
+			get = function(self)
+				return self._gui._object_refs[self].global_pos.x
+			end
+		},
+		
+		globalY = {
+			get = function(self)
+				return self._gui._object_refs[self].global_pos.y
+			end
+		},
 		
 		pos = {
 			set = function(self, x, y)

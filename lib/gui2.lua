@@ -430,7 +430,7 @@ GUI = class {
 			return obj
 		end,
 		
-		render = function(self)
+		render = function(self, x, y, w, h)
 			if self._allow_draw then
 				local deltatime = self._deltatime
 				local sx, sy = 1024 / self._w, 1024 / self._h
@@ -637,7 +637,7 @@ GUI = class {
 			
 			render.setRenderTargetTexture(self._rtid)
 			render.setRGBA(255, 255, 255, 255)
-			render.drawTexturedRect(0, 0, self._w, self._h)
+			render.drawTexturedRect(x or 0, y or 0, w or self._w, h or self._h)
 			
 			-- Post Draw
 			local dt = timer.frametime()
@@ -860,49 +860,6 @@ GUI = class {
 				self._redraw_all = true
 			end
 			
-			-- Change parents
-			-- if table.count(self._parent_queue) > 0 then
-			-- 	for obj, parent in pairs(self._parent_queue) do
-			-- 		local object = self._object_refs[obj]
-			-- 		if object.parent then
-			-- 			local parent_object = self._object_refs[object.parent]
-			-- 			parent_object.children[obj] = nil
-						
-			-- 			for i, o in pairs(parent_object.order) do
-			-- 				if o == obj then
-			-- 					table.remove(parent_object.order, i)
-								
-			-- 					break
-			-- 				end
-			-- 			end
-			-- 		else
-			-- 			self._objects[obj] = nil
-						
-			-- 			for i, o in pairs(self._render_order) do
-			-- 				if o == obj then
-			-- 					table.remove(self._render_order, i)
-								
-			-- 					break
-			-- 				end
-			-- 			end
-			-- 		end
-					
-			-- 		if parent then
-			-- 			self._object_refs[parent].children[obj] = object
-			-- 			table.insert(self._object_refs[parent].order, 1, obj)
-			-- 		else
-			-- 			self._objects[obj] = object
-			-- 			table.insert(self._render_order, 1, obj)
-			-- 		end
-					
-			-- 		object.parent = parent
-			-- 	end
-				
-			-- 	self._parent_queue = {}
-				
-			-- 	self._redraw_all = true
-			-- end
-			
 			-- Think
 			if not cx then
 				local _, x, y = xpcall(render.cursorPos, input.getCursorPos)
@@ -975,7 +932,7 @@ GUI = class {
 					if hover then
 						self._focus_object = hover
 						
-						hover.object:_hover()
+						hover.object:_hover(deltatime)
 						
 						break
 					end
@@ -1203,6 +1160,21 @@ GUI = class {
 		-- Simple functions
 		lerpColor = function(clr1, clr2, progress)
 			return clr1 * (1 - progress) + clr2 * progress
+		end,
+		
+		utf8sub = function(str, s, e)
+			-- Doesnt support -1 as index
+			if #str == 0 then return "" end
+			
+			local len = string.utf8len(str)
+			local e = e or len
+			if e < 0 then
+				e = len - e + 1
+			end
+			
+			if s > e then return "" end
+			
+			return string.sub(str, string.utf8offset(str, (s or 1) - 1), (string.utf8offset(str, e) or #str + 1) - 1)
 		end,
 		
 		------------------------------

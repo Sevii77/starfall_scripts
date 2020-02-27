@@ -25,13 +25,12 @@ return {
 		------------------------------
 		
 		_wrapText = function(self, text)
+			render.setFont(self.font)
+			
 			local str = ""
 			local line = ""
-			local height = nil
-			
+			local _, height = render.getTextSize("")
 			local text_height = 0
-			-- self._text_height = 0
-			render.setFont(self.font)
 			
 			for spacer, word in string.gmatch(text, "(%s*)(%S*)") do
 				if string.find(spacer, "\n") then
@@ -42,15 +41,15 @@ return {
 				else
 					local w, h = render.getTextSize(line .. spacer .. word)
 					
-					if not height then
-						height = h
-					end
-					
 					if w > self._w then
-						str = str .. line .. "\n"
-						line = word
-						
-						text_height = text_height + height
+						if #str > 0 then
+							str = str .. line .. "\n"
+							line = word
+							
+							text_height = text_height + height
+						else
+							line = line .. spacer .. word
+						end
 					else
 						line = line .. spacer .. word
 					end

@@ -26,7 +26,7 @@ return {
 		end,
 		
 		_press = function(self)
-			
+			self:onClick()
 		end,
 		
 		_pressDouble = function(self)
@@ -37,7 +37,7 @@ return {
 			self:onRelease()
 		end,
 		
-		_hover = function(self)
+		_hover = function(self, dt)
 			self:onHover()
 		end,
 		
