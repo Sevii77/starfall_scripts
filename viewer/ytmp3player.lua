@@ -57,6 +57,15 @@ if SERVER then
 		net.send()
 	end)
 	
+	net.receive("err", function(_, ply)
+		if ply ~= owner() then return end
+		
+		net.start("err")
+		net.writeString(net.readString())
+		net.writeString(net.readString())
+		net.send()
+	end)
+	
 else
 	
 	local curaudios = {}
@@ -75,7 +84,7 @@ else
 		frame.pos = Vector(56, 56)
 		frame.size = Vector(400, 400)
 		frame.closeable = false
-		frame.minSize = Vector(180, 150)
+		frame.minSize = Vector(200, 150)
 		
 		local volume = gui:create("slider", frame.inner)
 		volume.mainColor = "primaryColorDark"
@@ -194,7 +203,10 @@ else
 			end
 			
 			render.setRGBA(255, 255, 255, 255)
-			render.drawSimpleText(w / 2, h / 2, tostring(status) .. " " ..tostring(video_id), 1, 1)
+			
+			local text = tostring(status) .. " " ..tostring(video_id)
+			local _, th = render.getTextSize(text)
+			render.drawText(w / 2, h / 2 - th / 2, text, 1, 1)
 			
 			render.popMatrix()
 			
@@ -237,6 +249,7 @@ else
 				
 				bass.loadURL(string.format(server, video_id), "3d noblock noplay", function(snd, a, b)
 					if not snd then
+						status = "Error:"
 						video_id = tostring(a) .. " " .. tostring(b)
 						
 						return
@@ -320,6 +333,10 @@ else
 			play(net.readString(), settings.audio_count)
 		end)
 		
+		net.receive("err", function()
+			status = "Error playing " .. net.readString() .. ":\n" .. net.readString() .. "\n\n" .. status
+		end)
+		
 		hook.add("think", "", dothink)
 		hook.add("render", "", dorender)
 	end
@@ -330,11 +347,25 @@ else
 		net.receive("download", function()
 			local video_id = net.readString()
 			
-			http.get(string.format(server, video_id), function()
-				net.start("download")
+			http.get(string.format(server, video_id), function(data)
+				xpcall(function()
+					res = json.decode(data)
+					
+					net.start("err")
+					net.writeString(video_id)
+					net.writeString(res.error)
+					net.send()
+				end, function()
+					net.start("download")
+					net.writeString(video_id)
+					net.send()
+				end)
+			end, function(err)
+				net.start("err")
 				net.writeString(video_id)
+				net.writeString(err)
 				net.send()
-			end, print)
+			end)
 		end)
 	end
 	
