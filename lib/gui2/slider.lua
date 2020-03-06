@@ -23,6 +23,7 @@ return {
 		_active_color = false,
 		_hover_color = false,
 		
+		_text = "%s",
 		_draw_background = true,
 		_animation_speed = false,
 		_min = 0,
@@ -95,6 +96,12 @@ return {
 		
 		------------------------------
 		
+		_updateProgress = function(self)
+			self._progress = (self._value - self._min) / (self._max - self._min)
+		end,
+		
+		------------------------------
+		
 		_styles = {
 			{
 				_think = function(self, dt, cx, cy)
@@ -108,7 +115,7 @@ return {
 							local last = self._progress
 							local progress = math.clamp(self._horizontal and ((cx - self._h / 2) / (self._w - self._h)) or (((self._h - cy) - self._w / 2) / (self._h - self._w)), 0, 1)
 							self._value = math.round(progress * (self._max - self._min) + self._min, self._round)
-							self._progress = (self._value - self._min) / (self._max - self._min)
+							self:_updateProgress()
 							
 							if self._progress ~= last then
 								self:onChange(self._value)
@@ -230,7 +237,7 @@ return {
 					
 					render.setFont(self.font)
 					render.setColor(self.textColor)
-					render.drawText(ax == 0 and tox or (ax == 1 and w / 2 or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), tostring(self._value), ax)
+					render.drawText(ax == 0 and tox or (ax == 1 and w / 2 or w - tox), ay == 3 and toy or (ay == 1 and ((self._h - self._text_height) / 2) or h - th - toy), string.format(self._text, self._value), ax)
 				end
 			}
 		},
@@ -377,6 +384,7 @@ return {
 		min = {
 			set = function(self, min)
 				self._min = min or 0
+				self:_updateProgress()
 				
 				self:_changed(true)
 			end,
@@ -389,6 +397,7 @@ return {
 		max = {
 			set = function(self, max)
 				self._max = max or 1
+				self:_updateProgress()
 				
 				self:_changed(true)
 			end,
@@ -402,6 +411,7 @@ return {
 			set = function(self, min, max)
 				self._min = min or 0
 				self._max = max or 1
+				self:_updateProgress()
 				
 				self:_changed(true)
 			end,
@@ -414,6 +424,7 @@ return {
 		round = {
 			set = function(self, round)
 				self._round = round
+				self:_updateProgress()
 				
 				-- self:_changed(true)
 			end,
@@ -439,14 +450,22 @@ return {
 		
 		value = {
 			set = function(self, value)
-				self._value = value
-				self._progress = (self._value - self._min) / (self._max - self._min)
+				self._value = math.round(value, self._round)
+				self:_updateProgress()
 				
 				self:_changed(true)
 			end,
 			
 			get = function(self)
 				return self._value
+			end
+		},
+		
+		------------------------------
+		
+		progress = {
+			get = function(self)
+				return self._progress
 			end
 		}
 	}
