@@ -4,9 +4,9 @@
 --@include ../earclip.lua
 
 local xml = require("./xml.lua")
-local colors = require("../lib/enum/color.lua")
-local bezier = require("../lib/bezier.lua")
-local earclip = require("../lib/earclip.lua")
+local colors = require("../enum/color.lua")
+local bezier = require("../bezier.lua")
+local earclip = require("../earclip.lua")
 
 local svg = {quality = 10} -- units per segment
 local cache = {}
