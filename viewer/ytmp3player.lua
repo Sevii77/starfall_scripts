@@ -13,7 +13,6 @@
 local server = "https://sevii.dev/api/ytmp3/%s"
 local settings = {
 	volume = 1,
-	audio_count = 1,
 	mindist = 1000,
 	maxdist = 1200
 }
@@ -286,12 +285,14 @@ else
 						done_count = done_count + 1
 						if done_count == count then
 							for _, audio in pairs(curaudios) do
+								if not audio or type(audio) ~= "Bass" or not isValid(audio) then continue end
+								
 								audio:play()
 							end
+							
+							time_slider.max = curaudios[1]:getLength()
+							time_slider.value = 0
 						end
-						
-						time_slider.max = curaudios[1]:getLength()
-						time_slider.value = 0
 					end
 				end)
 			end)
@@ -330,7 +331,7 @@ else
 		end)
 		
 		net.receive("id", function()
-			play(net.readString(), settings.audio_count)
+			play(net.readString(), 1 + math.max(1, math.ceil((settings.volume - 10) * 19)))
 		end)
 		
 		net.receive("err", function()
