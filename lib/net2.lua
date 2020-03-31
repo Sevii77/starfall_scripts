@@ -79,7 +79,12 @@ lookup_write = {
 	-- Entity
 	[13] = function(ent)
 		net.writeUInt(ent:entIndex(), 13)
-	end
+	end,
+	
+	-- Player
+	[14] = function(ply)
+		net.writeUInt(ply:entIndex(), 7)
+	end,
 }
 
 lookup_read = {
@@ -158,6 +163,14 @@ lookup_read = {
 		local id = net.readUInt(13)
 		local ent = entity(id)
 		return isValid(ent) and ent or id
+	end,
+	
+	-- Player
+	[14] = function()
+		-- Return entity if valid, id otherwise
+		local id = net.readUInt(7)
+		local ent = entity(id)
+		return isValid(ent) and ent or id
 	end
 }
 
@@ -166,7 +179,7 @@ lookup_type = {
 		-- Return 1 if the table is itteratable, 0 otherwise
 		return table.count(var) == #var and 1 or 0
 	end,
-	bool = function(var) return 2 end,
+	boolean = function(var) return 2 end,
 	string = function(var) return 3 end,
 	number = function(var)
 		-- Float
@@ -183,7 +196,8 @@ lookup_type = {
 	end,
 	Vector = function(var) return 11 end,
 	Angle = function(var) return 12 end,
-	Entity = function(var) return 13 end
+	Entity = function(var) return 13 end,
+	Player = function(var) return 14 end
 }
 
 ----------------------------------------

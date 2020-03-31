@@ -237,26 +237,16 @@ local clearcolor = Color(0, 0, 0, 0)
 
 hook.add("inputPressed", "lib.gui", function(key)
 	for gui, _ in pairs(guis) do
-		if gui._focus_object then
+		if not gui._force_manual_input and gui._focus_object then
 			for k, _ in pairs(gui._buttons.left) do
 				if key == k then
-					gui._focus_object.object:_press()
-					
-					if timer.curtime() - gui._last_click < gui._doubleclick_time then
-						gui._focus_object.object:_pressDouble()
-					end
-					
-					gui._last_click = timer.curtime()
-					
-					table.insert(gui._clicking_objects.left, gui._focus_object)
+					gui:simulateLeftPress()
 				end
 			end
 			
 			for k, _ in pairs(gui._buttons.right) do
 				if key == k then
-					gui._focus_object.object:_pressRight()
-					
-					table.insert(gui._clicking_objects.right, gui._focus_object)
+					gui:simulateRightPress()
 				end
 			end
 		end
@@ -265,23 +255,17 @@ end)
 
 hook.add("inputReleased", "lib.gui", function(key)
 	for gui, _ in pairs(guis) do
-		for k, _ in pairs(gui._buttons.left) do
-			if key == k then
-				for _, obj in pairs(gui._clicking_objects.left) do
-					obj.object:_release()
+		if not gui._force_manual_input then
+			for k, _ in pairs(gui._buttons.left) do
+				if key == k then
+					gui:simulateLeftRelease()
 				end
-				
-				gui._clicking_objects.left = {}
 			end
-		end
-		
-		for k, _ in pairs(gui._buttons.right) do
-			if key == k then
-				for _, obj in pairs(gui._clicking_objects.right) do
-					obj.object:_releaseRight()
+			
+			for k, _ in pairs(gui._buttons.right) do
+				if key == k then
+					gui:simulateRightRelease()
 				end
-				
-				gui._clicking_objects.right = {}
 			end
 		end
 	end
@@ -342,6 +326,7 @@ GUI = class {
 		_redraw_order = {},
 		_redraw_all = true,
 		_allow_draw = false,
+		_force_manual_input = false,
 		
 		_cells = {},
 		_cell_size = 64,
@@ -819,7 +804,7 @@ GUI = class {
 			end
 		end,
 		
-		think = function(self, cx, cy)
+		think = function(self, cx, cy, w, h)
 			local t = timer.curtime()
 			
 			if self._last_update > t - 1 / self._max_fps then return end
@@ -867,9 +852,15 @@ GUI = class {
 			end
 			
 			if cx then
-				local w, h = render.getResolution()
+				if not w then
+					w, h = render.getResolution()
+				end
+				
 				cx, cy = self._w / w * cx, self._h / h * cy
 			end
+			
+			self._cursorx = cx
+			self._cursory = cy
 			
 			local function think(objects)
 				for obj, object in pairs(objects) do
@@ -962,14 +953,7 @@ GUI = class {
 				
 				return p.x, p.y
 			else
-				local _, x, y = xpcall(render.cursorPos, input.getCursorPos)
-				
-				if x then
-					local w, h = render.getResolution()
-					x, y = self._w / w * x, self._h / h * y
-				end
-				
-				return x, y
+				return self._cursorx, self._cursory
 			end
 		end,
 		
@@ -994,6 +978,52 @@ GUI = class {
 				
 				table.insert(self._render_order, 1, obj)
 			end
+		end,
+		
+		simulateLeftPress = function(self)
+			if not self._focus_object then return false end
+			
+			self._focus_object.object:_press()
+			
+			if timer.curtime() - self._last_click < self._doubleclick_time then
+				self._focus_object.object:_pressDouble()
+			end
+			
+			self._last_click = timer.curtime()
+			
+			table.insert(self._clicking_objects.left, self._focus_object)
+			
+			return true
+		end,
+		
+		simulateRightPress = function(self)
+			if not self._focus_object then return false end
+			
+			self._focus_object.object:_pressRight()
+			
+			table.insert(self._clicking_objects.right, self._focus_object)
+			
+			return true
+		end,
+		
+		simulateLeftRelease = function(self)
+			for _, obj in pairs(self._clicking_objects.left) do
+				obj.object:_release()
+			end
+			
+			self._clicking_objects.left = {}
+			
+			return true
+		end,
+		
+		simulateRightRelease = function(self)
+			for _, obj in pairs(self._clicking_objects.right) do
+				obj.object:_releaseRight()
+			end
+			
+			self._clicking_objects.right = {}
+			
+			return true
 		end,
 		
 		------------------------------
@@ -1038,6 +1068,14 @@ GUI = class {
 		
 		getFpsLimit = function(self)
 			return self._max_fps
+		end,
+		
+		setForceManualInput = function(self, state)
+			self._force_manual_input = state
+		end,
+		
+		getForceManualInput = function(self)
+			return self._force_manual_input
 		end
 	},
 	
@@ -1123,6 +1161,16 @@ GUI = class {
 			
 			get = function(self)
 				return self._max_fps
+			end
+		},
+		
+		forceManualInput = {
+			set = function(self, state)
+				self._force_manual_input = state
+			end,
+			
+			get = function(self)
+				return self._force_manual_input
 			end
 		}
 	},
