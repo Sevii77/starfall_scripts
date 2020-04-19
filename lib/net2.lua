@@ -85,6 +85,11 @@ lookup_write = {
 	[14] = function(ply)
 		net.writeUInt(ply:entIndex(), 7)
 	end,
+	
+	-- nil
+	[15] = function()
+		
+	end,
 }
 
 lookup_read = {
@@ -171,7 +176,12 @@ lookup_read = {
 		local id = net.readUInt(7)
 		local ent = entity(id)
 		return isValid(ent) and ent or id
-	end
+	end,
+	
+	-- nil
+	[15] = function()
+		return nil
+	end,
 }
 
 lookup_type = {
@@ -197,7 +207,8 @@ lookup_type = {
 	Vector = function(var) return 11 end,
 	Angle = function(var) return 12 end,
 	Entity = function(var) return 13 end,
-	Player = function(var) return 14 end
+	Player = function(var) return 14 end,
+	["nil"] = function(var) return 15 end,
 }
 
 ----------------------------------------
