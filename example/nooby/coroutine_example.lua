@@ -36,6 +36,11 @@ hook.add("render", "render_to_rt", function()
     if coroutine.resume(cor) then
         hook.remove("render", "render_to_rt")
     end
+    
+    -- Reset render target back to none
+    render.selectRenderTarget()
+    -- Color also
+    render.setRGBA(255, 255, 255, 255)
 end)
 
 -- Render the rt to the screen
